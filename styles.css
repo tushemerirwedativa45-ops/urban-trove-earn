@@ -1864,3 +1864,187 @@ footer {
     color: #aaa;
     font-weight: normal;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   FULL RESPONSIVE DESIGN — All Devices
+   - Small phones:  < 480px
+   - Large phones:  480px – 767px
+   - Tablets:       768px – 1023px
+   - Laptops:       1024px – 1279px
+   - Desktops:      1280px+
+═══════════════════════════════════════════════════════════ */
+
+/* ── Base: make all images and videos fluid ── */
+img, video, canvas {
+    max-width: 100%;
+    height: auto;
+}
+
+/* ── Small phones (under 480px) ── */
+@media (max-width: 480px) {
+
+    body { font-size: 14px; }
+
+    /* Nav */
+    nav { flex-wrap: wrap; padding: 0 12px; }
+    .logo img { height: 32px; }
+    nav ul li { padding: 8px 14px; }
+    nav ul li a { font-size: 0.9rem; }
+
+    /* Hero carousel */
+    .carousel-container { height: 220px; }
+    .carousel-title { font-size: 1.4rem; margin-bottom: 10px; }
+    .carousel-subtitle { font-size: 0.85rem; margin-bottom: 15px; }
+    .carousel-overlay .btn-primary { padding: 9px 18px; font-size: 0.85rem; }
+
+    /* Plans grid */
+    .plans-grid { grid-template-columns: 1fr; gap: 15px; }
+    .plan-card { padding: 22px 15px; }
+    .plan-amount { font-size: 1.5rem; }
+    .return-value { font-size: 1.2rem; }
+
+    /* Form */
+    .form-container { padding: 20px 15px; }
+    .btn-large { padding: 13px; font-size: 1rem; }
+
+    /* Dashboard stats */
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .stat-card { padding: 14px 10px; }
+    .stat-card p { font-size: 1.1rem; }
+
+    /* Games */
+    .games-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .game-card { padding: 18px 12px; }
+    .game-icon { font-size: 2rem; }
+    .game-card h3 { font-size: 1rem; }
+
+    /* Urban Jet */
+    .interface-main { grid-template-columns: 1fr; }
+    .interface-top { flex-direction: column; gap: 10px; text-align: center; padding: 14px; }
+    .game-title-display { font-size: 1.6rem; }
+    .balance-amount { font-size: 1.4rem; }
+    .stake-controls { grid-template-columns: 1fr; }
+    .stake-btn { width: 100%; height: 40px; }
+    .multiplier-overlay { top: 8px; right: 8px; padding: 8px 12px; }
+    #multiplierText { font-size: 1.6rem !important; }
+    .historical-odds-bar { padding: 12px; gap: 10px; }
+    .odds-item { padding: 8px 12px; font-size: 0.85rem; }
+
+    /* VIP grid */
+    .vip-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .vip-card { padding: 14px; }
+
+    /* Table */
+    table { font-size: 0.78rem; }
+    th, td { padding: 8px 6px; }
+
+    /* Withdraw page */
+    .balance-overview { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .bal-card { padding: 12px; }
+    .bal-card .bal-amount { font-size: 1.2rem; }
+    .deposit-slot { flex-direction: column; align-items: flex-start; }
+    .slot-status { text-align: left; }
+
+    /* Footer */
+    footer { padding: 15px 0; font-size: 0.85rem; }
+
+    /* Sections padding */
+    .deposit-section, .dashboard, .register-section,
+    .login-section, .referral-section, .vip-section,
+    .about-section, .contact-section, .profile-section,
+    .withdraw-section { padding: 18px 14px; }
+
+    main { padding: 12px; }
+}
+
+/* ── Large phones (480px – 767px) ── */
+@media (min-width: 480px) and (max-width: 767px) {
+
+    .carousel-container { height: 280px; }
+    .carousel-title { font-size: 1.8rem; }
+    .carousel-subtitle { font-size: 0.95rem; }
+
+    .plans-grid { grid-template-columns: 1fr 1fr; gap: 15px; }
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 15px; }
+    .games-grid { grid-template-columns: 1fr 1fr; gap: 15px; }
+    .vip-grid { grid-template-columns: 1fr 1fr; gap: 15px; }
+    .balance-overview { grid-template-columns: 1fr 1fr; gap: 15px; }
+
+    .interface-main { grid-template-columns: 1fr; }
+    .interface-top { flex-direction: column; gap: 12px; text-align: center; }
+    .game-title-display { font-size: 2rem; }
+
+    table { font-size: 0.85rem; }
+    th, td { padding: 10px 8px; }
+
+    main { padding: 15px; }
+}
+
+/* ── Tablets (768px – 1023px) ── */
+@media (min-width: 768px) and (max-width: 1023px) {
+
+    .carousel-container { height: 360px; }
+    .carousel-title { font-size: 2.4rem; }
+
+    .plans-grid { grid-template-columns: 1fr 1fr; gap: 20px; }
+    .stats-grid { grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .games-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .vip-grid { grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .balance-overview { grid-template-columns: repeat(2, 1fr); gap: 18px; }
+
+    .interface-main { grid-template-columns: 250px 1fr; }
+    .control-side { display: none; } /* hide right panel on tablet, stats shown elsewhere */
+
+    nav ul li { margin-left: 12px; }
+    nav ul li a { font-size: 0.85rem; }
+
+    main { padding: 18px; }
+}
+
+/* ── Laptops (1024px – 1279px) ── */
+@media (min-width: 1024px) and (max-width: 1279px) {
+
+    .carousel-container { height: 420px; }
+    .plans-grid { grid-template-columns: repeat(3, 1fr); }
+    .stats-grid { grid-template-columns: repeat(4, 1fr); }
+    .interface-main { grid-template-columns: 260px 1fr 220px; }
+
+    nav ul li { margin-left: 14px; }
+    nav ul li a { font-size: 0.9rem; }
+}
+
+/* ── Large desktops (1280px+) ── */
+@media (min-width: 1280px) {
+    main { max-width: 1300px; }
+    .plans-grid { grid-template-columns: repeat(5, 1fr); }
+    .stats-grid { grid-template-columns: repeat(4, 1fr); }
+    .carousel-container { height: 520px; }
+    .carousel-title { font-size: 4rem; }
+}
+
+/* ── Touch devices — bigger tap targets ── */
+@media (hover: none) and (pointer: coarse) {
+    .btn-primary, .btn-choose, .btn-play,
+    .place-bet-btn, .cashout-btn, .stake-btn,
+    .withdraw-btn { min-height: 48px; }
+
+    input, select { min-height: 46px; font-size: 16px; } /* prevents iOS zoom on focus */
+
+    nav ul li a { padding: 6px 0; }
+}
+
+/* ── Landscape phones ── */
+@media (max-width: 767px) and (orientation: landscape) {
+    .carousel-container { height: 200px; }
+    .carousel-title { font-size: 1.4rem; }
+    .interface-main { grid-template-columns: 1fr 1fr; }
+    .control-side { display: none; }
+}
+
+/* ── Print (if anyone prints a page) ── */
+@media print {
+    header, footer, .hamburger, .btn-primary,
+    .withdraw-btn, .place-bet-btn { display: none; }
+    body { background: white; color: black; }
+    .stat-card, .plan-card { border: 1px solid #ccc; }
+}
