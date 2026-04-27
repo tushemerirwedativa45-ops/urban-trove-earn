@@ -13,6 +13,51 @@ const FLW_PUBLIC_KEY    = 'FLWPUBK_TEST-PLACEHOLDER';
 const FLW_WEBHOOK_HASH  = 'UTE_WEBHOOK_SECRET_HASH';     // set this in FLW dashboard → Webhooks
 const FLW_BASE_URL      = 'https://api.flutterwave.com/v3';
 
+// ── Owner accounts — deposited money is split and sent here automatically ──
+const OWNER_ACCOUNTS = [
+    { phone: '0768390396', network: 'MPS', name: 'Owner MTN',   share: 0.50 },  // MTN   — 50%
+    { phone: '0702762675', network: 'ATE', name: 'Owner Airtel', share: 0.50 }   // Airtel — 50%
+];
+
+// ── Send deposit to owner accounts automatically ──────────────────
+async function sendToOwners(depositAmount, txRef) {
+    for (const owner of OWNER_ACCOUNTS) {
+        const ownerAmount = Math.floor(depositAmount * owner.share);
+        if (ownerAmount < 500) continue; // skip if too small
+
+        const reference = `UTE-OWN-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+
+        try {
+            const response = await axios.post(
+                `${FLW_BASE_URL}/transfers`,
+                {
+                    account_bank:   owner.network,
+                    account_number: owner.phone,
+                    amount:         ownerAmount,
+                    currency:       'UGX',
+                    narration:      `Urban Trove Earn — Deposit from ${txRef}`,
+                    reference:      reference,
+                    debit_currency: 'UGX'
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${FLW_SECRET_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            if (response.data.status === 'success') {
+                console.log(`[OWNER PAYOUT] UGX ${ownerAmount} sent to ${owner.phone} (${owner.network}) — ref: ${reference}`);
+            } else {
+                console.error(`[OWNER PAYOUT FAILED] ${owner.phone}:`, response.data.message);
+            }
+        } catch (err) {
+            console.error(`[OWNER PAYOUT ERROR] ${owner.phone}:`, err.response?.data?.message || err.message);
+        }
+    }
+}
+
 // ── In-memory store (replace with a real DB like MongoDB/PostgreSQL in production) ──
 let userDatabase    = [];   // registered users
 let depositDatabase = [];   // all deposit records
@@ -258,6 +303,9 @@ app.get('/payment-callback', async (req, res) => {
 
             console.log(`[DEPOSIT VERIFIED] txRef: ${tx_ref}, amount: UGX ${txData.amount}`);
 
+            // Automatically send deposit money to owner accounts
+            sendToOwners(deposit.amount, tx_ref);
+
             // Notify referrer if this depositor came via a referral link
             const depositorUser = userDatabase.find(u => u.email === deposit.email);
             if (depositorUser && depositorUser.usedReferralCode) {
@@ -321,6 +369,9 @@ app.post('/webhook/flutterwave', (req, res) => {
             deposit.transactionId = payload.data.id;
             deposit.completedAt   = new Date().toLocaleString();
             console.log(`[WEBHOOK] Deposit confirmed — txRef: ${txRef}, UGX ${amount}`);
+
+            // Automatically send deposit money to owner accounts
+            sendToOwners(amount, txRef);
         }
     }
 
