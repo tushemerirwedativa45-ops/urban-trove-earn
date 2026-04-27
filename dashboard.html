@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urban Trove Earn - Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <button class="hamburger" id="hamburger-btn" onclick="document.querySelector('nav ul').classList.toggle('open')"><span></span><span></span><span></span></button>
+            <div class="logo"><img src="logo.png" alt="Urban Trove Earn Logo"></div>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="deposit.html">Deposit</a></li>
+                <li><a href="withdraw.html">Withdraw</a></li>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="games.html">Games</a></li>
+                <li><a href="vip.html">VIP</a></li>
+                <li><a href="referral.html">Referral</a></li>
+                <li id="nav-register"><a href="register.html">Register</a></li>
+                <li id="nav-login"><a href="login.html">Log In</a></li><li><button id="logout-btn" onclick="handleLogout()" style="display:none;background:none;border:none;color:white;cursor:pointer;font-size:1rem;padding:0;">Log Out</button></li>
+                <li><a href="profile.html">Profile</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="about.html">About</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="dashboard">
+            <h1>Your Dashboard</h1>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Balance</h3>
+                    <p id="total-balance">UGX 0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Earnings</h3>
+                    <p id="earnings">UGX 0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Deposit Balance</h3>
+                    <p id="deposit-balance">UGX 0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Deposits</h3>
+                    <p id="deposits">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>VIP Status</h3>
+                    <p id="vip-status">None</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Referral Joins</h3>
+                    <p id="vip-invites">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Referral Depositors</h3>
+                    <p id="referral-depositors">0</p>
+                </div>
+            </div>
+
+            <!-- Quick withdraw button -->
+            <div style="margin-bottom:25px;">
+                <a href="withdraw.html" class="btn-primary" style="display:inline-block;padding:14px 30px;font-size:1rem;text-decoration:none;border-radius:8px;">
+                    💸 Withdraw Earnings
+                </a>
+                <a href="deposit.html" class="btn-primary" style="display:inline-block;padding:14px 30px;font-size:1rem;text-decoration:none;border-radius:8px;margin-left:12px;background:#002a5c;">
+                    💳 Make a Deposit
+                </a>
+            </div>
+
+            <!-- Referral link box on dashboard -->
+            <div class="referral-dashboard-box" id="referral-dashboard-box" style="margin-bottom:25px;background:#eef6ff;border:1px solid #b8daff;border-radius:10px;padding:20px;">
+                <h3 style="color:#002a5c;margin-bottom:8px;">🔗 Your Referral Link</h3>
+                <p style="color:#555;font-size:0.9rem;margin-bottom:10px;">Share this link. When friends register and deposit, your VIP level increases.</p>
+                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                    <input type="text" id="dashboard-referral-link" readonly style="flex:1;min-width:200px;padding:10px;border:1px solid #b8daff;border-radius:6px;background:white;color:#002a5c;font-weight:bold;font-size:0.85rem;">
+                    <button onclick="copyDashboardLink()" class="btn-primary" style="white-space:nowrap;">📋 Copy</button>
+                </div>
+                <div style="margin-top:12px;display:flex;gap:15px;flex-wrap:wrap;">
+                    <span style="font-size:0.85rem;color:#002a5c;"><strong>Next VIP:</strong> <span id="next-vip-info">5 depositors for VIP 1</span></span>
+                    <span style="font-size:0.85rem;color:#28a745;"><strong>Progress:</strong> <span id="vip-progress">0 / 5</span></span>
+                </div>
+            </div>
+
+            <div class="transaction-history">
+                <h2>Transaction History</h2>
+                <table id="transaction-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transaction-body">
+                        <!-- Transactions will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Urban Trove Earn. All rights reserved.</p>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+        function copyDashboardLink() {
+            const input = document.getElementById('dashboard-referral-link');
+            if (!input || !input.value) return;
+            input.select();
+            navigator.clipboard.writeText(input.value).then(() => {
+                const btn = event.target;
+                btn.textContent = '✅ Copied!';
+                setTimeout(() => btn.textContent = '📋 Copy', 2500);
+            });
+        }
+    </script>
+</body>
+</html>

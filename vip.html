@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urban Trove Earn - VIP</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <button class="hamburger" id="hamburger-btn" onclick="document.querySelector('nav ul').classList.toggle('open')"><span></span><span></span><span></span></button>
+            <div class="logo"><img src="logo.png" alt="Urban Trove Earn Logo"></div>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="deposit.html">Deposit</a></li>
+                <li><a href="withdraw.html">Withdraw</a></li>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="games.html">Games</a></li>
+                <li><a href="vip.html">VIP</a></li>
+                <li><a href="referral.html">Referral</a></li>
+                <li id="nav-register"><a href="register.html">Register</a></li>
+                <li id="nav-login"><a href="login.html">Log In</a></li><li><button id="logout-btn" onclick="handleLogout()" style="display:none;background:none;border:none;color:white;cursor:pointer;font-size:1rem;padding:0;">Log Out</button></li>
+                <li><a href="profile.html">Profile</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="about.html">About</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="vip-section">
+            <h1>Become a VIP</h1>
+            <p>Invite members and earn a bonus percentage on your returns. The more members you invite and have them deposit, the higher your VIP tier.</p>
+
+            <div class="form-note" id="vip-code-note">
+                Your referral code is <strong id="display-referral-code">UT0702762675</strong>. Share it with friends so their deposit activates your VIP progress.
+            </div>
+
+            <div class="vip-grid">
+                <div class="vip-card">
+                    <h3>VIP 1</h3>
+                    <p>Invite 5 members who deposit</p>
+                    <p><strong>Bonus:</strong> 2%</p>
+                </div>
+                <div class="vip-card">
+                    <h3>VIP 2</h3>
+                    <p>Invite 10 members who deposit</p>
+                    <p><strong>Bonus:</strong> 4%</p>
+                </div>
+                <div class="vip-card">
+                    <h3>VIP 3</h3>
+                    <p>Invite 15 members who deposit</p>
+                    <p><strong>Bonus:</strong> 6%</p>
+                </div>
+                <div class="vip-card">
+                    <h3>VIP 4</h3>
+                    <p>Invite 20 members who deposit</p>
+                    <p><strong>Bonus:</strong> 8%</p>
+                </div>
+                <div class="vip-card">
+                    <h3>VIP 5</h3>
+                    <p>Invite 25 members who deposit</p>
+                    <p><strong>Bonus:</strong> 10%</p>
+                </div>
+            </div>
+
+            <div class="form-note" id="vip-summary-note">
+                You have <strong id="referral-deposits">0</strong> referral deposits and your current tier is <strong id="current-vip-tier">None</strong>.
+            </div>
+
+            <form id="vip-form">
+                <div class="form-group">
+                    <label for="invite-count">Number of invited members (manual):</label>
+                    <input type="number" id="invite-count" min="0" placeholder="Enter invited members count" required>
+                </div>
+                <button type="submit" class="btn-primary">Update VIP Status</button>
+            </form>
+
+            <div id="vip-result" class="status-message success" style="display: block; background-color: #e7f5ff; color: #002a5c; border: 1px solid #b8daff; margin-top: 20px;">Enter your invite count or use the referral page to update your VIP tier.</div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Urban Trove Earn. All rights reserved.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

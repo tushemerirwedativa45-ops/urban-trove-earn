@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urban Trove Earn - Register</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <button class="hamburger" id="hamburger-btn" onclick="document.querySelector('nav ul').classList.toggle('open')"><span></span><span></span><span></span></button>
+            <div class="logo"><img src="logo.png" alt="Urban Trove Earn Logo"></div>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="deposit.html">Deposit</a></li>
+                <li><a href="withdraw.html">Withdraw</a></li>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="games.html">Games</a></li>
+                <li><a href="vip.html">VIP</a></li>
+                <li><a href="referral.html">Referral</a></li>
+                <li id="nav-register"><a href="register.html">Register</a></li>
+                <li id="nav-login"><a href="login.html">Log In</a></li><li><button id="logout-btn" onclick="handleLogout()" style="display:none;background:none;border:none;color:white;cursor:pointer;font-size:1rem;padding:0;">Log Out</button></li>
+                <li><a href="profile.html">Profile</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="about.html">About</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="register-section">
+            <h1>Create Your Account</h1>
+            <p>Register and start using Urban Trove Earn. Your account keeps your deposits, VIP progress, and referral status in one place.</p>
+
+            <form id="register-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Enter username" required>
+                </div>
+                <div class="form-group">
+                    <label for="lastname">Last Name</label>
+                    <input type="text" id="lastname" placeholder="Enter last name" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="country">Country</label>
+                    <select id="country" required>
+                        <option value="">Select your country</option>
+                        <option value="Uganda">Uganda</option>
+                        <option value="Kenya">Kenya</option>
+                        <option value="Tanzania">Tanzania</option>
+                        <option value="Rwanda">Rwanda</option>
+                        <option value="South Africa">South Africa</option>
+                        <option value="Nigeria">Nigeria</option>
+                        <option value="Ghana">Ghana</option>
+                        <option value="Egypt">Egypt</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="reg-referral-code">Referral Code (Optional)</label>
+                    <input type="text" id="reg-referral-code" placeholder="Enter referral code if you were invited">
+                </div>
+                <div class="form-group">
+                    <label for="password">Create Password</label>
+                    <input type="password" id="password" placeholder="Create a password" required>
+                </div>
+                <div class="password-requirements" id="password-requirements">
+                    <p>Password must include:</p>
+                    <ul>
+                        <li id="req-length">At least 8 characters</li>
+                        <li id="req-uppercase">At least one uppercase letter</li>
+                        <li id="req-number">At least one number</li>
+                        <li id="req-special">At least one special character</li>
+                    </ul>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="agree-terms" required>
+                    <label for="agree-terms">I agree to the terms and conditions</label>
+                </div>
+                <button type="submit" class="btn-primary">Register</button>
+            </form>
+
+            <div id="register-status" class="status-message"></div>
+
+            <!-- Shown after successful registration -->
+            <div id="referral-link-box" style="display:none;margin-top:25px;background:#eef6ff;border:1px solid #b8daff;border-radius:10px;padding:20px;">
+                <h3 style="color:#002a5c;margin-bottom:10px;">🎉 Your Referral Link</h3>
+                <p style="color:#555;margin-bottom:12px;font-size:0.95rem;">Share this link with friends. When they register and deposit, you earn VIP status!</p>
+                <div style="display:flex;gap:10px;align-items:center;">
+                    <input type="text" id="referral-link-display" readonly style="flex:1;padding:10px;border:1px solid #b8daff;border-radius:6px;background:white;color:#002a5c;font-weight:bold;font-size:0.9rem;">
+                    <button onclick="copyReferralLink()" class="btn-primary" style="white-space:nowrap;">📋 Copy Link</button>
+                </div>
+                <p id="copy-confirm" style="color:#28a745;font-size:0.85rem;margin-top:8px;display:none;">✅ Link copied to clipboard!</p>
+                <div style="margin-top:15px;padding:12px;background:rgba(0,42,92,0.06);border-radius:8px;">
+                    <p style="color:#002a5c;font-size:0.88rem;"><strong>VIP Tiers:</strong> 5 depositors = VIP 1 &nbsp;|&nbsp; 10 = VIP 2 &nbsp;|&nbsp; 15 = VIP 3 &nbsp;|&nbsp; 20 = VIP 4 &nbsp;|&nbsp; 25 = VIP 5</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Urban Trove Earn. All rights reserved.</p>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+        // Auto-fill referral code from URL ?ref=CODE
+        const urlRef = new URLSearchParams(window.location.search).get('ref');
+        if (urlRef) {
+            const refInput = document.getElementById('reg-referral-code');
+            if (refInput) refInput.value = urlRef;
+        }
+
+        function copyReferralLink() {
+            const input = document.getElementById('referral-link-display');
+            input.select();
+            navigator.clipboard.writeText(input.value).then(() => {
+                const confirm = document.getElementById('copy-confirm');
+                confirm.style.display = 'block';
+                setTimeout(() => confirm.style.display = 'none', 3000);
+            });
+        }
+    </script>
+</body>
+</html>

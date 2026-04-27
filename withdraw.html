@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urban Trove Earn - Withdraw</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .withdraw-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .withdraw-section h1 {
+            color: #002a5c;
+            margin-bottom: 8px;
+        }
+
+        .withdraw-section > p {
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .balance-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 18px;
+            margin-bottom: 30px;
+        }
+
+        .bal-card {
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+            border-radius: 8px;
+            padding: 18px 20px;
+            text-align: center;
+        }
+
+        .bal-card.locked { border-left-color: #dc3545; }
+        .bal-card.pending { border-left-color: #FFD700; }
+
+        .bal-card h3 {
+            color: #002a5c;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .bal-card .bal-amount {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .bal-card.locked .bal-amount { color: #dc3545; }
+        .bal-card.pending .bal-amount { color: #e6a800; }
+
+        /* Deposit slots */
+        .deposits-list {
+            margin-bottom: 30px;
+        }
+
+        .deposits-list h2 {
+            color: #002a5c;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            border-bottom: 2px solid #28a745;
+            padding-bottom: 10px;
+        }
+
+        .deposit-slot {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 18px 20px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .deposit-slot.unlocked {
+            border-color: #28a745;
+            background: rgba(40,167,69,0.04);
+        }
+
+        .deposit-slot.locked-slot {
+            border-color: #dc3545;
+            background: rgba(220,53,69,0.03);
+        }
+
+        .slot-info h4 {
+            color: #002a5c;
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+
+        .slot-info p {
+            color: #666;
+            font-size: 0.85rem;
+        }
+
+        .slot-status {
+            text-align: right;
+        }
+
+        .slot-amount {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #002a5c;
+        }
+
+        .countdown-badge {
+            display: inline-block;
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .unlocked-badge {
+            display: inline-block;
+            background: #d4edda;
+            border: 1px solid #28a745;
+            color: #155724;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        /* Withdraw form */
+        .withdraw-form-box {
+            background: #f8f9fa;
+            border: 2px solid #002a5c;
+            border-radius: 12px;
+            padding: 28px;
+            margin-bottom: 25px;
+        }
+
+        .withdraw-form-box h2 {
+            color: #002a5c;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            border-bottom: 2px solid #28a745;
+            padding-bottom: 12px;
+        }
+
+        .withdraw-amount-display {
+            background: white;
+            border: 2px solid #28a745;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .withdraw-amount-display .label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .withdraw-amount-display .amount {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .withdraw-amount-display .note {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .locked-notice {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .locked-notice h3 {
+            color: #721c24;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+
+        .locked-notice p {
+            color: #721c24;
+            font-size: 0.9rem;
+        }
+
+        .locked-notice .big-countdown {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #dc3545;
+            margin: 10px 0;
+        }
+
+        .withdraw-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 1px;
+        }
+
+        .withdraw-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(40,167,69,0.3);
+        }
+
+        .withdraw-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .withdraw-history h2 {
+            color: #002a5c;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            border-bottom: 2px solid #28a745;
+            padding-bottom: 10px;
+        }
+
+        #withdraw-status {
+            margin-top: 15px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            display: none;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <button class="hamburger" id="hamburger-btn" onclick="document.querySelector('nav ul').classList.toggle('open')"><span></span><span></span><span></span></button>
+            <div class="logo"><img src="logo.png" alt="Urban Trove Earn Logo"></div>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="deposit.html">Deposit</a></li>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="withdraw.html">Withdraw</a></li>
+                <li><a href="games.html">Games</a></li>
+                <li><a href="vip.html">VIP</a></li>
+                <li><a href="referral.html">Referral</a></li>
+                <li id="nav-register"><a href="register.html">Register</a></li>
+                <li id="nav-login"><a href="login.html">Log In</a></li>
+                <li><button id="logout-btn" onclick="handleLogout()" style="display:none;background:none;border:none;color:white;cursor:pointer;font-size:1rem;padding:0;">Log Out</button></li>
+                <li><a href="profile.html">Profile</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="about.html">About</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="withdraw-section">
+            <h1>💸 Withdraw Earnings</h1>
+            <p>Your earnings are available for withdrawal 16 days after your deposit date.</p>
+
+            <!-- Balance Overview -->
+            <div class="balance-overview">
+                <div class="bal-card">
+                    <h3>Available to Withdraw</h3>
+                    <div class="bal-amount" id="wd-available">UGX 0</div>
+                </div>
+                <div class="bal-card locked">
+                    <h3>Locked (16-day hold)</h3>
+                    <div class="bal-amount" id="wd-locked">UGX 0</div>
+                </div>
+                <div class="bal-card">
+                    <h3>Total Earnings</h3>
+                    <div class="bal-amount" id="wd-earnings">UGX 0</div>
+                </div>
+                <div class="bal-card pending">
+                    <h3>Total Withdrawn</h3>
+                    <div class="bal-amount" id="wd-withdrawn">UGX 0</div>
+                </div>
+            </div>
+
+            <!-- Deposit Slots with countdown -->
+            <div class="deposits-list">
+                <h2>📋 Your Deposits & Unlock Status</h2>
+                <div id="deposit-slots-container">
+                    <p style="color:#888;text-align:center;padding:20px;">No deposits found. Make a deposit first.</p>
+                </div>
+            </div>
+
+            <!-- Withdraw Form -->
+            <div class="withdraw-form-box">
+                <h2>💳 Request Withdrawal</h2>
+
+                <div class="withdraw-amount-display">
+                    <div class="label">Amount available to withdraw</div>
+                    <div class="amount" id="wd-form-available">UGX 0</div>
+                    <div class="note">Only unlocked earnings (after 16 days) can be withdrawn</div>
+                </div>
+
+                <div id="locked-notice" class="locked-notice" style="display:none;">
+                    <h3>🔒 Funds Locked</h3>
+                    <p>Your earnings will be available in:</p>
+                    <div class="big-countdown" id="next-unlock-countdown">—</div>
+                    <p>Make sure to come back after 16 days from your deposit date.</p>
+                </div>
+
+                <form id="withdraw-form">
+                    <div class="form-group">
+                        <label for="wd-amount">Withdrawal Amount (UGX)</label>
+                        <input type="number" id="wd-amount" placeholder="Enter amount to withdraw" min="5000">
+                    </div>
+                    <div class="form-group">
+                        <label for="wd-phone">Mobile Money Number</label>
+                        <input type="text" id="wd-phone" placeholder="e.g. 0702762675">
+                    </div>
+                    <div class="form-group">
+                        <label for="wd-network">Mobile Network</label>
+                        <select id="wd-network">
+                            <option value="MPS">MTN Mobile Money Uganda</option>
+                            <option value="ATE">Airtel Money Uganda</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="wd-name">Full Name (as registered on mobile money)</label>
+                        <input type="text" id="wd-name" placeholder="Enter your full name">
+                    </div>
+
+                    <button type="submit" class="withdraw-btn" id="withdraw-submit-btn">
+                        💸 WITHDRAW NOW
+                    </button>
+                </form>
+
+                <div id="withdraw-status"></div>
+            </div>
+
+            <!-- Withdrawal History -->
+            <div class="withdraw-history">
+                <h2>📜 Withdrawal History</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Phone</th>
+                            <th>Network</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="withdraw-history-body">
+                        <tr><td colspan="5" style="text-align:center;color:#888;">No withdrawals yet.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Urban Trove Earn. All rights reserved.</p>
+    </footer>
+
+    <script src="script.js"></script>
+    <script src="withdraw.js"></script>
+</body>
+</html>

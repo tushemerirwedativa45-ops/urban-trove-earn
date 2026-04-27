@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urban Trove Earn - Referral</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <button class="hamburger" id="hamburger-btn" onclick="document.querySelector('nav ul').classList.toggle('open')"><span></span><span></span><span></span></button>
+            <div class="logo"><img src="logo.png" alt="Urban Trove Earn Logo"></div>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="deposit.html">Deposit</a></li>
+                <li><a href="withdraw.html">Withdraw</a></li>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="games.html">Games</a></li>
+                <li><a href="vip.html">VIP</a></li>
+                <li><a href="referral.html">Referral</a></li>
+                <li id="nav-register"><a href="register.html">Register</a></li>
+                <li id="nav-login"><a href="login.html">Log In</a></li><li><button id="logout-btn" onclick="handleLogout()" style="display:none;background:none;border:none;color:white;cursor:pointer;font-size:1rem;padding:0;">Log Out</button></li>
+                <li><a href="profile.html">Profile</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="about.html">About</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="referral-section">
+            <h1>Referral Program</h1>
+            <p>Share your unique referral link. When someone registers using your link and makes a deposit, your VIP level increases automatically.</p>
+
+            <!-- Referral Link Display -->
+            <div class="form-note" style="margin-bottom:20px;">
+                <strong style="display:block;margin-bottom:8px;color:#002a5c;">🔗 Your Referral Link:</strong>
+                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                    <input type="text" id="referral-link-display" readonly style="flex:1;min-width:200px;padding:10px;border:1px solid #b8daff;border-radius:6px;background:white;color:#002a5c;font-weight:bold;font-size:0.88rem;">
+                    <button onclick="copyRefLink()" class="btn-primary" style="white-space:nowrap;">📋 Copy Link</button>
+                </div>
+                <p id="ref-copy-confirm" style="color:#28a745;font-size:0.85rem;margin-top:6px;display:none;">✅ Copied to clipboard!</p>
+            </div>
+
+            <!-- Stats -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:15px;margin-bottom:25px;">
+                <div class="stat-card">
+                    <h3>Joined via Link</h3>
+                    <p id="ref-joins">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Deposited</h3>
+                    <p id="ref-depositors">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>VIP Status</h3>
+                    <p id="ref-vip-status">None</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Next VIP At</h3>
+                    <p id="ref-next-vip">5 depositors</p>
+                </div>
+            </div>
+
+            <!-- VIP Progress Bar -->
+            <div class="form-note" style="margin-bottom:25px;">
+                <strong style="color:#002a5c;">VIP Progress:</strong>
+                <div style="background:#e0e0e0;border-radius:20px;height:18px;margin-top:10px;overflow:hidden;">
+                    <div id="vip-progress-bar" style="height:100%;background:linear-gradient(90deg,#28a745,#20c997);border-radius:20px;width:0%;transition:width 0.5s ease;"></div>
+                </div>
+                <p id="vip-progress-text" style="font-size:0.85rem;color:#555;margin-top:6px;">0 / 5 depositors for VIP 1</p>
+            </div>
+
+            <!-- VIP Tiers Info -->
+            <div class="vip-grid" style="margin-bottom:25px;">
+                <div class="vip-card"><h3>VIP 1</h3><p>5 depositors via your link</p><p><strong>Bonus: +2%</strong></p></div>
+                <div class="vip-card"><h3>VIP 2</h3><p>10 depositors via your link</p><p><strong>Bonus: +4%</strong></p></div>
+                <div class="vip-card"><h3>VIP 3</h3><p>15 depositors via your link</p><p><strong>Bonus: +6%</strong></p></div>
+                <div class="vip-card"><h3>VIP 4</h3><p>20 depositors via your link</p><p><strong>Bonus: +8%</strong></p></div>
+                <div class="vip-card"><h3>VIP 5</h3><p>25 depositors via your link</p><p><strong>Bonus: +10%</strong></p></div>
+            </div>
+
+            <div id="referral-status" class="status-message"></div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Urban Trove Earn. All rights reserved.</p>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+        function copyRefLink() {
+            const input = document.getElementById('referral-link-display');
+            if (!input || !input.value) return;
+            input.select();
+            navigator.clipboard.writeText(input.value).then(() => {
+                document.getElementById('ref-copy-confirm').style.display = 'block';
+                setTimeout(() => document.getElementById('ref-copy-confirm').style.display = 'none', 3000);
+            });
+        }
+    </script>
+</body>
+</html>

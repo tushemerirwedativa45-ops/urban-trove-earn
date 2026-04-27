@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owners Access</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #080818;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bg-carousel {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+        }
+
+        .bg-slide {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 1.2s ease;
+        }
+
+        .bg-slide.active { opacity: 1; }
+
+        .bg-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 10, 0.70);
+        }
+
+        .owners-login-box {
+            position: relative;
+            z-index: 1;
+            background: rgba(13, 13, 46, 0.60);
+            backdrop-filter: blur(14px);
+            border: 2px solid #c9a800;
+            border-radius: 14px;
+            padding: 45px 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 10px 50px rgba(201,168,0,0.15);
+        }
+
+        .owners-login-box {
+            background: transparent;
+            border: none;
+            padding: 0;
+        }
+
+        .crown-icon {
+            text-align: center;
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            color: #c9a800;
+            text-align: center;
+            font-size: 1.6rem;
+            letter-spacing: 3px;
+            margin-bottom: 6px;
+        }
+
+        .sub {
+            color: #555;
+            text-align: center;
+            font-size: 0.85rem;
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            color: #aaa;
+            font-size: 0.88rem;
+            margin-bottom: 5px;
+        }
+
+        .form-group { margin-bottom: 18px; }
+
+        input {
+            width: 100%;
+            background: #080818;
+            border: 1px solid #c9a800;
+            color: white;
+            padding: 11px 14px;
+            border-radius: 7px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        input:focus {
+            border-color: #ffed4e;
+            box-shadow: 0 0 0 3px rgba(201,168,0,0.15);
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            background: linear-gradient(135deg, #c9a800, #ffed4e);
+            color: #080818;
+            border: none;
+            padding: 13px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 8px;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+        }
+
+        button[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(201,168,0,0.3);
+        }
+
+        #owners-login-status {
+            margin-top: 15px;
+            padding: 10px 14px;
+            border-radius: 6px;
+            text-align: center;
+            display: none;
+            font-size: 0.9rem;
+        }
+
+        #owners-login-status.error {
+            background: rgba(220,53,69,0.15);
+            color: #ff6b6b;
+            border: 1px solid #dc3545;
+        }
+
+        #owners-login-status.success {
+            background: rgba(40,167,69,0.15);
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #444;
+            font-size: 0.82rem;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .back-link:hover { color: #888; }
+    </style>
+</head>
+<body>
+    <div class="bg-carousel">
+        <div class="bg-slide active" style="background-image:url('adminpics/Screenshot 2026-04-12 at 17-27-39 Google Search.png')"></div>
+        <div class="bg-slide" style="background-image:url('adminpics/Screenshot 2026-04-12 at 17-28-01 Google Search.png')"></div>
+        <div class="bg-slide" style="background-image:url('adminpics/Screenshot 2026-04-12 at 17-28-22 Google Search.png')"></div>
+        <div class="bg-slide" style="background-image:url('adminpics/Screenshot 2026-04-12 at 17-28-44 Google Search.png')"></div>
+        <div class="bg-slide" style="background-image:url('adminpics/Screenshot 2026-04-12 at 17-29-12 Google Search.png')"></div>
+        <div class="bg-overlay"></div>
+    </div>
+    <div class="owners-login-box">
+        <div class="crown-icon">👑</div>
+        <h1>OWNERS ACCESS</h1>
+        <p class="sub">Restricted — Authorised Owners Only</p>
+
+        <form id="owners-login-form">
+            <div class="form-group">
+                <label for="owner-username">Username</label>
+                <input type="text" id="owner-username" placeholder="Enter your username" autocomplete="off" required>
+            </div>
+            <div class="form-group">
+                <label for="owner-password">Password</label>
+                <input type="password" id="owner-password" placeholder="Enter your password" required>
+            </div>
+            <button type="submit">ENTER OWNERS PAGE</button>
+        </form>
+
+        <div id="owners-login-status"></div>
+        <a href="admin-panel.html" class="back-link">← Back to Admin Panel</a>
+    </div>
+
+    <script src="owners.js"></script>
+    <script>
+        const bgSlides = document.querySelectorAll('.bg-slide');
+        let bgCurrent = 0;
+        setInterval(() => {
+            bgSlides[bgCurrent].classList.remove('active');
+            bgCurrent = (bgCurrent + 1) % bgSlides.length;
+            bgSlides[bgCurrent].classList.add('active');
+        }, 4000);
+    </script>
+</body>
+</html>

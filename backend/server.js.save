@@ -1,0 +1,34 @@
+const express = require("express");
+const axios = require("axios");
+const cors = require("cors");
+let userDatabase = [];
+
+const app = express();
+app.use(express.json());
+app.use(cors());
+
+// Deposit route
+app.post("/deposit",...) => {
+  const { amount, phone } = req.body;
+
+  console.log("Deposit request:", amount, phone);
+
+  // TODO: Airtel API will go here
+
+  res.json({ message: "Request sent to Airtel" });
+});
+
+// Webhook (Airtel will call this)
+app.post("/webhook", (req, res) => {
+  console.log("Airtel callback:", req.body);
+
+  // Update user balance here
+
+  res.sendStatus(200);
+});
+
+app.listen(3000, () => {
+  console.log("Backend running on http://localhost:3000");
+});
+
+

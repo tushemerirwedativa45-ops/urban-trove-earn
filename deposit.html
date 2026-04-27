@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urban Trove Earn - Deposit</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <button class="hamburger" id="hamburger-btn" onclick="document.querySelector('nav ul').classList.toggle('open')"><span></span><span></span><span></span></button>
+            <div class="logo"><img src="logo.png" alt="Urban Trove Earn Logo"></div>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="deposit.html">Deposit</a></li>
+                <li><a href="withdraw.html">Withdraw</a></li>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="games.html">Games</a></li>
+                <li><a href="vip.html">VIP</a></li>
+                <li><a href="referral.html">Referral</a></li>
+                <li id="nav-register"><a href="register.html">Register</a></li>
+                <li id="nav-login"><a href="login.html">Log In</a></li><li><button id="logout-btn" onclick="handleLogout()" style="display:none;background:none;border:none;color:white;cursor:pointer;font-size:1rem;padding:0;">Log Out</button></li>
+                <li><a href="profile.html">Profile</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="about.html">About</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero-carousel deposit-hero">
+            <div class="carousel-container">
+                <div class="carousel-wrapper">
+                    <div class="carousel-slide active" style="background-image: url('homepics/make money.png')"></div>
+                    <div class="carousel-slide" style="background-image: url('homepics/money.png')"></div>
+                    <div class="carousel-slide" style="background-image: url('homepics/online earn.png')"></div>
+                    <div class="carousel-slide" style="background-image: url('homepics/wow money.png')"></div>
+                </div>
+                <div class="carousel-overlay">
+                    <h1 class="carousel-title">Grow Your Wealth</h1>
+                    <p class="carousel-subtitle">Choose an investment plan and start earning today</p>
+                </div>
+                <div class="carousel-indicators-deposit">
+                    <span class="indicator active" data-slide="0"></span>
+                    <span class="indicator" data-slide="1"></span>
+                    <span class="indicator" data-slide="2"></span>
+                    <span class="indicator" data-slide="3"></span>
+                </div>
+            </div>
+        </section>
+
+        <section class="deposit-section">
+            <div class="section-header">
+                <h2>Investment Plans</h2>
+                <p>Select and customize your investment plan</p>
+            </div>
+
+            <div class="plans-grid">
+                <div class="plan-card" data-plan="30000">
+                    <div class="plan-badge">Entry</div>
+                    <h3>Investment One</h3>
+                    <div class="plan-amount">UGX 30,000</div>
+                    <div class="plan-return">
+                        <div class="return-label">Total Income</div>
+                        <div class="return-value">UGX 36,900</div>
+                    </div>
+                    <div class="plan-benefit">+23% Return</div>
+                    <button class="btn-choose" data-value="30000">Select Plan</button>
+                </div>
+
+                <div class="plan-card featured" data-plan="40000">
+                    <div class="plan-badge popular">Popular</div>
+                    <h3>Investment Two</h3>
+                    <div class="plan-amount">UGX 40,000</div>
+                    <div class="plan-return">
+                        <div class="return-label">Total Income</div>
+                        <div class="return-value">UGX 49,200</div>
+                    </div>
+                    <div class="plan-benefit">+23% Return</div>
+                    <button class="btn-choose" data-value="40000">Select Plan</button>
+                </div>
+
+                <div class="plan-card" data-plan="50000">
+                    <div class="plan-badge">Standard</div>
+                    <h3>Investment Three</h3>
+                    <div class="plan-amount">UGX 50,000</div>
+                    <div class="plan-return">
+                        <div class="return-label">Total Income</div>
+                        <div class="return-value">UGX 61,500</div>
+                    </div>
+                    <div class="plan-benefit">+23% Return</div>
+                    <button class="btn-choose" data-value="50000">Select Plan</button>
+                </div>
+
+                <div class="plan-card" data-plan="60000">
+                    <div class="plan-badge">Premium</div>
+                    <h3>Investment Four</h3>
+                    <div class="plan-amount">UGX 60,000</div>
+                    <div class="plan-return">
+                        <div class="return-label">Total Income</div>
+                        <div class="return-value">UGX 73,800</div>
+                    </div>
+                    <div class="plan-benefit">+23% Return</div>
+                    <button class="btn-choose" data-value="60000">Select Plan</button>
+                </div>
+
+                <!-- Custom Amount Plan Card -->
+                <div class="plan-card custom-plan-card" id="customPlanCard">
+                    <div class="plan-badge" style="background:#002a5c;">Custom</div>
+                    <h3>Invest Any Amount</h3>
+                    <div class="plan-amount" style="font-size:1.3rem;">UGX 30,000+</div>
+                    <div class="plan-return">
+                        <div class="return-label">Total Income</div>
+                        <div class="return-value" id="customReturnPreview">—</div>
+                    </div>
+                    <div class="plan-benefit" id="customPercentPreview">Enter amount below</div>
+                    <div class="custom-amount-input-wrap">
+                        <input
+                            type="number"
+                            id="custom-amount-input"
+                            min="30000"
+                            step="1000"
+                            placeholder="e.g. 150,000"
+                            oninput="previewCustomPlan(this.value)"
+                        >
+                    </div>
+                    <button class="btn-choose" id="customPlanBtn" onclick="selectCustomPlan()">Select Custom Plan</button>
+                </div>
+            </div>
+
+            <form id="deposit-form" class="deposit-form-modern">
+                <div class="form-container">
+                    <div class="form-section">
+                        <h3>Deposit Details</h3>
+                        
+                        <div class="form-group">
+                            <label for="plan">Selected Plan:</label>
+                            <div class="plan-display" id="plan-display">
+                                <span class="plan-name">Choose a plan above</span>
+                                <span class="plan-value"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="dep-name">Full Name:</label>
+                            <input type="text" id="dep-name" placeholder="Enter your full name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="dep-email">Email Address:</label>
+                            <input type="email" id="dep-email" placeholder="Enter your email" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="dep-phone">Mobile Money Number:</label>
+                            <input type="text" id="dep-phone" placeholder="e.g. 0702762675" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="dep-network">Mobile Network:</label>
+                            <select id="dep-network">
+                                <option value="MPS">MTN Mobile Money Uganda</option>
+                                <option value="ATE">Airtel Money Uganda</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="referral-code">Referral Code (Optional):</label>
+                            <input type="text" id="referral-code" placeholder="Enter referral code if you were invited">
+                        </div>
+
+                        <div class="form-note" id="plan-note">
+                            We add you 23% for the amount you have invested there.
+                        </div>
+
+                        <input type="hidden" id="plan" name="plan" required>
+                        <button type="submit" class="btn-primary btn-large" id="deposit-submit-btn">💳 PAY WITH FLUTTERWAVE</button>
+                    </div>
+                </div>
+
+                <div id="deposit-status" class="status-message"></div>
+            </form>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Urban Trove Earn. All rights reserved.</p>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+        // Carousel functionality for deposit page
+        const depositSlides = document.querySelectorAll('.deposit-hero .carousel-slide');
+        const depositIndicators = document.querySelectorAll('.carousel-indicators-deposit .indicator');
+        let depositCurrentSlide = 0;
+        const depositTotalSlides = depositSlides.length;
+
+        function showDepositSlide(n) {
+            depositSlides.forEach(slide => slide.classList.remove('active'));
+            depositIndicators.forEach(indicator => indicator.classList.remove('active'));
+            
+            depositCurrentSlide = (n + depositTotalSlides) % depositTotalSlides;
+            depositSlides[depositCurrentSlide].classList.add('active');
+            depositIndicators[depositCurrentSlide].classList.add('active');
+        }
+
+        function nextDepositSlide() {
+            showDepositSlide(depositCurrentSlide + 1);
+        }
+
+        // Auto-advance every 4 seconds
+        setInterval(nextDepositSlide, 4000);
+
+        // Click indicators to go to specific slide
+        depositIndicators.forEach((indicator, index) => {
+            indicator.addEventListener('click', () => showDepositSlide(index));
+        });
+
+        // Plan card selection
+        const planCards = document.querySelectorAll('.plan-card');
+        const planDisplay = document.getElementById('plan-display');
+        const planInput = document.getElementById('plan');
+
+        planCards.forEach(card => {
+            const selectBtn = card.querySelector('.btn-choose');
+            if (!selectBtn || card.id === 'customPlanCard') return;
+            selectBtn.addEventListener('click', () => {
+                planCards.forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                const planValue = selectBtn.getAttribute('data-value');
+                const planName  = card.querySelector('h3').textContent;
+                const planAmount = card.querySelector('.plan-amount').textContent;
+                planInput.value = planValue;
+                planDisplay.innerHTML = `<span class="plan-name">${planName} - ${planAmount}</span>`;
+                updatePlanNote();
+            });
+        });
+
+        // Custom plan — live return preview
+        function previewCustomPlan(value) {
+            const amount  = parseFloat(value);
+            const preview = document.getElementById('customReturnPreview');
+            const percent = document.getElementById('customPercentPreview');
+            if (!amount || amount < 30000) {
+                preview.textContent = '—';
+                percent.textContent = 'Minimum UGX 30,000';
+                percent.style.color = '#dc3545';
+                return;
+            }
+            const returnAmt = Math.round(amount * 1.23);
+            preview.textContent = 'UGX ' + returnAmt.toLocaleString();
+            percent.textContent = '+23% Return';
+            percent.style.color = '#28a745';
+        }
+
+        function selectCustomPlan() {
+            const input   = document.getElementById('custom-amount-input');
+            const amount  = parseFloat(input.value);
+            if (!amount || amount < 30000) {
+                input.style.borderColor = '#dc3545';
+                input.focus();
+                return;
+            }
+            input.style.borderColor = '#28a745';
+            planCards.forEach(c => c.classList.remove('selected'));
+            document.getElementById('customPlanCard').classList.add('selected');
+            planInput.value = amount;
+            const returnAmt = Math.round(amount * 1.23);
+            planDisplay.innerHTML = `<span class="plan-name">Custom Plan — UGX ${amount.toLocaleString()}</span>`;
+            const planNote = document.getElementById('plan-note');
+            if (planNote) planNote.textContent = `You invested UGX ${amount.toLocaleString()} and will receive UGX ${returnAmt.toLocaleString()} (+23%).`;
+        }
+    </script>
+</body>
+</html>

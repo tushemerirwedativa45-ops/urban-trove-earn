@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owners Page</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #080818;
+            color: #e0e0e0;
+            font-family: 'Arial', sans-serif;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .bg-carousel {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+        }
+
+        .bg-slide {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 1.2s ease;
+        }
+
+        .bg-slide.active { opacity: 1; }
+
+        .bg-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 10, 0.82);
+        }
+
+        .owners-header, .tab-bar, .owners-main {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── Header ── */
+        .owners-header {
+            background: rgba(10, 10, 42, 0.75);
+            backdrop-filter: blur(12px);
+            border-bottom-color: #c9a800;
+            padding: 16px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .owners-header h1 {
+            color: #c9a800;
+            font-size: 1.4rem;
+            letter-spacing: 3px;
+        }
+
+        .owners-header .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .owner-badge {
+            background: rgba(201,168,0,0.15);
+            border: 1px solid #c9a800;
+            color: #c9a800;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .owners-logout-btn {
+            background: #8b0000;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85rem;
+            transition: background 0.3s;
+        }
+
+        .owners-logout-btn:hover { background: #a00000; }
+
+        /* ── Tabs ── */
+        .tab-bar {
+            background: rgba(13, 13, 46, 0.80);
+            backdrop-filter: blur(10px);
+            display: flex;
+            border-bottom: 2px solid #1a1a4a;
+            padding: 0 30px;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: #888;
+            padding: 16px 22px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover { color: #c9a800; }
+
+        .tab-btn.active {
+            color: #c9a800;
+            border-bottom-color: #c9a800;
+        }
+
+        /* ── Main Content ── */
+        .owners-main {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* ── Cards ── */
+        .card {
+            background: rgba(13, 13, 46, 0.65);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(26, 26, 74, 0.8);
+            border-radius: 12px;
+            padding: 28px;
+            margin-bottom: 25px;
+        }
+
+        .card h2 {
+            color: #c9a800;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #1a1a4a;
+            letter-spacing: 1px;
+        }
+
+        /* ── Stats Row ── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .stat-box {
+            background: rgba(13, 13, 46, 0.60);
+            backdrop-filter: blur(10px);
+            border: 1px solid #1a1a4a;
+            border-radius: 10px;
+            padding: 22px;
+            text-align: center;
+        }
+
+        .stat-box.gold { border-color: #c9a800; }
+        .stat-box.green { border-color: #28a745; }
+
+        .stat-box h3 {
+            color: #888;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .stat-box .num {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #c9a800;
+        }
+
+        .stat-box.green .num { color: #28a745; }
+
+        /* ── Secrets Section ── */
+        .secret-block {
+            background: rgba(8, 8, 24, 0.70);
+            backdrop-filter: blur(8px);
+            border: 1px solid #c9a800;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 18px;
+        }
+
+        .secret-block h3 {
+            color: #c9a800;
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .secret-block p, .secret-block li {
+            color: #bbb;
+            font-size: 0.92rem;
+            line-height: 1.8;
+        }
+
+        .secret-block ul, .secret-block ol {
+            padding-left: 20px;
+        }
+
+        .highlight {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .warning {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        /* ── Transaction Table ── */
+        .txn-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .txn-table th {
+            background: #0a0a2a;
+            color: #c9a800;
+            padding: 12px 14px;
+            text-align: left;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .txn-table td {
+            padding: 11px 14px;
+            border-bottom: 1px solid #1a1a4a;
+            color: #ccc;
+        }
+
+        .txn-table tr:hover td { background: rgba(201,168,0,0.04); }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: bold;
+        }
+
+        .badge.completed { background: rgba(40,167,69,0.2); color: #28a745; border: 1px solid #28a745; }
+        .badge.recorded  { background: rgba(201,168,0,0.2);  color: #c9a800; border: 1px solid #c9a800; }
+        .badge.pending   { background: rgba(220,53,69,0.2);  color: #ff6b6b; border: 1px solid #ff6b6b; }
+
+        .empty-state {
+            text-align: center;
+            color: #444;
+            padding: 40px;
+            font-size: 0.9rem;
+        }
+
+        /* ── Chat ── */
+        .chat-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 520px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            background: #080818;
+            border: 1px solid #1a1a4a;
+            border-radius: 10px 10px 0 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .chat-messages::-webkit-scrollbar { width: 5px; }
+        .chat-messages::-webkit-scrollbar-track { background: #080818; }
+        .chat-messages::-webkit-scrollbar-thumb { background: #1a1a4a; border-radius: 3px; }
+
+        .chat-msg {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .chat-msg.mine {
+            align-self: flex-end;
+            background: #1a3a6a;
+            border: 1px solid #2a4a8a;
+            color: #e0e0e0;
+        }
+
+        .chat-msg.theirs {
+            align-self: flex-start;
+            background: #1a1a3a;
+            border: 1px solid #2a2a5a;
+            color: #e0e0e0;
+        }
+
+        .chat-msg .msg-sender {
+            font-size: 0.75rem;
+            color: #c9a800;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .chat-msg .msg-time {
+            font-size: 0.7rem;
+            color: #555;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .chat-input-row {
+            display: flex;
+            gap: 10px;
+            background: #0d0d2e;
+            border: 1px solid #1a1a4a;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            padding: 14px;
+        }
+
+        .chat-input-row input {
+            flex: 1;
+            background: #080818;
+            border: 1px solid #1a1a4a;
+            color: white;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .chat-input-row input:focus { border-color: #c9a800; }
+
+        .chat-send-btn {
+            background: linear-gradient(135deg, #c9a800, #ffed4e);
+            color: #080818;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+
+        .chat-send-btn:hover { transform: scale(1.04); }
+
+        .chat-online-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .online-dot {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.82rem;
+            color: #888;
+        }
+
+        .online-dot span.dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #444;
+            display: inline-block;
+        }
+
+        .online-dot.active span.dot { background: #28a745; }
+
+        /* ── Owners List ── */
+        .owners-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+        }
+
+        .owner-card {
+            background: rgba(8, 8, 24, 0.65);
+            backdrop-filter: blur(8px);
+            border: 1px solid #1a1a4a;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .owner-card .avatar {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #c9a800, #ffed4e);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #080818;
+            margin: 0 auto 12px;
+        }
+
+        .owner-card h3 {
+            color: #c9a800;
+            font-size: 0.95rem;
+            margin-bottom: 5px;
+        }
+
+        .owner-card p {
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        .owner-card.you {
+            border-color: #c9a800;
+            background: rgba(201,168,0,0.05);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .owners-header { flex-direction: column; gap: 12px; text-align: center; }
+            .tab-bar { padding: 0 10px; }
+            .tab-btn { padding: 14px 14px; font-size: 0.85rem; }
+            .chat-msg { max-width: 90%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-carousel">
+        <div class="bg-slide active" style="background-image:url('adminpics/Screenshot 2026-04-12 at 17-27-39 Google Search.png')"></div>
+        <div class="bg-slide" style="background-image:url('adminpics/Screenshot 2026-04-12 at 17-28-01 Google Search.png')"></div>
+        <div class="bg-slide" style="background-image:url('adminpics/Screenshot 2026-04-12 at 17-28-22 Google Search.png')"></div>
+        <div class="bg-slide" style="background-image:url('adminpics/Screenshot 2026-04-12 at 17-28-44 Google Search.png')"></div>
+        <div class="bg-slide" style="background-image:url('adminpics/Screenshot 2026-04-12 at 17-29-12 Google Search.png')"></div>
+        <div class="bg-overlay"></div>
+    </div>
+
+    <div class="owners-header">
+        <h1>👑 OWNERS PAGE — URBAN TROVE EARN</h1>
+        <div class="header-right">
+            <span class="owner-badge" id="owner-badge-name">Owner</span>
+            <button class="owners-logout-btn" onclick="ownersLogout()">Logout</button>
+        </div>
+    </div>
+
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('overview')">📊 Overview</button>
+        <button class="tab-btn" onclick="switchTab('secrets')">🔒 System Secrets</button>
+        <button class="tab-btn" onclick="switchTab('transactions')">💰 All Transactions</button>
+        <button class="tab-btn" onclick="switchTab('chat')">💬 Owners Chat</button>
+        <button class="tab-btn" onclick="switchTab('owners')">👑 Owners</button>
+    </div>
+
+    <div class="owners-main">
+
+        <!-- ── OVERVIEW TAB ── -->
+        <div class="tab-content active" id="tab-overview">
+            <div class="stats-row">
+                <div class="stat-box gold">
+                    <h3>Registered Users</h3>
+                    <div class="num" id="ov-users">0</div>
+                </div>
+                <div class="stat-box green">
+                    <h3>Total Deposits</h3>
+                    <div class="num" id="ov-deposits">0</div>
+                </div>
+                <div class="stat-box gold">
+                    <h3>Total UGX Deposited</h3>
+                    <div class="num" id="ov-amount">0</div>
+                </div>
+                <div class="stat-box green">
+                    <h3>Total Earnings Paid</h3>
+                    <div class="num" id="ov-earnings">0</div>
+                </div>
+                <div class="stat-box gold">
+                    <h3>Referral Deposits</h3>
+                    <div class="num" id="ov-referrals">0</div>
+                </div>
+                <div class="stat-box green">
+                    <h3>Current VIP Tier</h3>
+                    <div class="num" id="ov-vip" style="font-size:1.4rem;">None</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📋 REGISTERED USER DETAILS</h2>
+                <div id="ov-user-table"><div class="empty-state">No user registered yet.</div></div>
+            </div>
+        </div>
+
+        <!-- ── SECRETS TAB ── -->
+        <div class="tab-content" id="tab-secrets">
+
+            <div class="secret-block">
+                <h3>🏦 How the Deposit System Works</h3>
+                <ul>
+                    <li>Users choose a plan: <span class="highlight">UGX 30,000 → 40,000 | 40,000 → 50,000 | 50,000 → 60,000 | 60,000 → 70,000</span></li>
+                    <li>The Airtel account number is hardcoded as <span class="highlight">0702762675</span> — only that number is accepted</li>
+                    <li>After deposit, the system waits <span class="highlight">5 seconds</span> then automatically adds the interest return to the user's balance</li>
+                    <li>All data is stored in the user's browser <span class="warning">localStorage</span> — there is no real server or database yet</li>
+                    <li>This means each user's data only exists on their own device/browser</li>
+                </ul>
+            </div>
+
+            <div class="secret-block">
+                <h3>📈 Investment Plan Returns (Profit Margins)</h3>
+                <ul>
+                    <li>Plan 1: Deposit UGX 30,000 → Return UGX 40,000 → <span class="highlight">Profit: UGX 10,000 (33.33%)</span></li>
+                    <li>Plan 2: Deposit UGX 40,000 → Return UGX 50,000 → <span class="highlight">Profit: UGX 10,000 (25%)</span></li>
+                    <li>Plan 3: Deposit UGX 50,000 → Return UGX 60,000 → <span class="highlight">Profit: UGX 10,000 (20%)</span></li>
+                    <li>Plan 4: Deposit UGX 60,000 → Return UGX 70,000 → <span class="highlight">Profit: UGX 10,000 (16.67%)</span></li>
+                    <li class="warning">Note: Returns are simulated — no real money moves. This is a frontend demo.</li>
+                </ul>
+            </div>
+
+            <div class="secret-block">
+                <h3>🎮 Urban Jet Game — How It Works</h3>
+                <ul>
+                    <li>The crash point is taken from a fixed sequence: <span class="highlight">[1.1, 3, 1.40, 1.08, 2.5, 1.15, 4.2, 1.05, 2.8, 1.20]</span> then loops</li>
+                    <li>A random value of up to <span class="highlight">+0.3</span> is added to each crash point to make it feel unpredictable</li>
+                    <li>The multiplier increases by <span class="highlight">0.003</span> per animation frame (~60fps)</li>
+                    <li>Game balance starts at <span class="highlight">UGX 1,000</span> (virtual, not real money)</li>
+                    <li>Players can place 2 bets simultaneously and cash out independently</li>
+                    <li>If a player does not cash out before the crash, the bet is lost</li>
+                </ul>
+            </div>
+
+            <div class="secret-block">
+                <h3>👑 VIP System — How It Works</h3>
+                <ul>
+                    <li>VIP tier is based on number of referral deposits made using the user's referral code</li>
+                    <li>VIP 1: 5 referrals → <span class="highlight">+2% bonus on earnings</span></li>
+                    <li>VIP 2: 10 referrals → <span class="highlight">+4% bonus</span></li>
+                    <li>VIP 3: 15 referrals → <span class="highlight">+6% bonus</span></li>
+                    <li>VIP 4: 20 referrals → <span class="highlight">+8% bonus</span></li>
+                    <li>VIP 5: 25 referrals → <span class="highlight">+10% bonus</span></li>
+                    <li>The VIP bonus is applied on top of the interest return at deposit time</li>
+                </ul>
+            </div>
+
+            <div class="secret-block">
+                <h3>🔑 Admin & Owners Access</h3>
+                <ul>
+                    <li>Admin panel: <span class="highlight">admin.html</span> — accessible by all 5 admins</li>
+                    <li>Owners page: <span class="highlight">owners.html</span> — accessible only by the 4 owners (not Tonny)</li>
+                    <li>Admin link: hidden dot <span class="highlight">●</span> in the footer of the home page only</li>
+                    <li>Owners link: hidden star <span class="highlight">★</span> inside the admin panel (only visible after admin login)</li>
+                    <li>Sessions use <span class="highlight">sessionStorage</span> — clears when browser tab is closed</li>
+                    <li class="warning">Tonny has admin panel access only — NOT owners page access</li>
+                </ul>
+            </div>
+
+            <div class="secret-block">
+                <h3>🔐 All Admin Credentials</h3>
+                <ul>
+                    <li>kabs the coder — <span class="highlight">45k45a@#</span> (Admin + Owner)</li>
+                    <li>heptaknight — Admin: <span class="highlight">45450</span> | Owners: <span class="highlight">4545</span></li>
+                    <li>patrick forex raider — Admin: <span class="highlight">45450</span> | Owners: <span class="highlight">4545</span></li>
+                    <li>john baptist forex raider — Admin: <span class="highlight">45450</span> | Owners: <span class="highlight">4545</span></li>
+                    <li>tonny — Admin: <span class="highlight">45450</span> | <span class="warning">No owners access</span></li>
+                </ul>
+            </div>
+
+            <div class="secret-block">
+                <h3>⚠️ Known Limitations (Frontend Only)</h3>
+                <ul>
+                    <li class="warning">All data is stored in localStorage — clearing browser data wipes everything</li>
+                    <li class="warning">Passwords are stored in plain text in localStorage — not secure for production</li>
+                    <li class="warning">The Airtel payment is simulated — no real money is processed</li>
+                    <li class="warning">Interest returns fire after 5 seconds — not a real investment period</li>
+                    <li>To make this a real platform, a backend (Firebase / Supabase / Node.js) is needed</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ── TRANSACTIONS TAB ── -->
+        <div class="tab-content" id="tab-transactions">
+            <div class="card">
+                <h2>💰 ALL TRANSACTIONS</h2>
+                <div id="txn-container"><div class="empty-state">No transactions recorded yet.</div></div>
+            </div>
+        </div>
+
+        <!-- ── CHAT TAB ── -->
+        <div class="tab-content" id="tab-chat">
+            <div class="card">
+                <h2>💬 OWNERS PRIVATE CHAT</h2>
+
+                <div class="chat-online-bar" id="chat-online-bar">
+                    <div class="online-dot active" id="dot-kabs"><span class="dot"></span> kabs the coder</div>
+                    <div class="online-dot" id="dot-hepta"><span class="dot"></span> heptaknight</div>
+                    <div class="online-dot" id="dot-patrick"><span class="dot"></span> patrick forex raider</div>
+                    <div class="online-dot" id="dot-john"><span class="dot"></span> john baptist forex raider</div>
+                </div>
+
+                <div class="chat-wrapper">
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="empty-state" id="chat-empty">No messages yet. Start the conversation.</div>
+                    </div>
+                    <div class="chat-input-row">
+                        <input type="text" id="chat-input" placeholder="Type a message..." maxlength="500"
+                            onkeydown="if(event.key==='Enter') sendChatMessage()">
+                        <button class="chat-send-btn" onclick="sendChatMessage()">SEND</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── OWNERS TAB ── -->
+        <div class="tab-content" id="tab-owners">
+            <div class="card">
+                <h2>👑 THE OWNERS</h2>
+                <div class="owners-list">
+                    <div class="owner-card" id="owner-card-kabs">
+                        <div class="avatar">K</div>
+                        <h3>kabs the coder</h3>
+                        <p>Lead Developer & Owner</p>
+                    </div>
+                    <div class="owner-card" id="owner-card-hepta">
+                        <div class="avatar">H</div>
+                        <h3>heptaknight</h3>
+                        <p>Owner</p>
+                    </div>
+                    <div class="owner-card" id="owner-card-patrick">
+                        <div class="avatar">P</div>
+                        <h3>patrick forex raider</h3>
+                        <p>Owner</p>
+                    </div>
+                    <div class="owner-card" id="owner-card-john">
+                        <div class="avatar">J</div>
+                        <h3>john baptist forex raider</h3>
+                        <p>Owner</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="owners.js"></script>
+    <script>
+        const bgSlides = document.querySelectorAll('.bg-slide');
+        let bgCurrent = 0;
+        setInterval(() => {
+            bgSlides[bgCurrent].classList.remove('active');
+            bgCurrent = (bgCurrent + 1) % bgSlides.length;
+            bgSlides[bgCurrent].classList.add('active');
+        }, 4000);
+    </script>
+</body>
+</html>

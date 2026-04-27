@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel — Urban Trove Earn</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            background: #0f0f23;
+            color: white;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .bg-carousel {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+        }
+
+        .bg-slide {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 1.2s ease;
+        }
+
+        .bg-slide.active { opacity: 1; }
+
+        .bg-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 20, 0.78);
+        }
+
+        .admin-header, .admin-main {
+            position: relative;
+            z-index: 1;
+        }
+
+        .admin-header {
+            background: rgba(30, 58, 95, 0.75);
+            backdrop-filter: blur(12px);
+            padding: 18px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #FFD700;
+        }
+
+        .admin-header h1 {
+            color: #FFD700;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+        }
+
+        .admin-header span {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        .admin-logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .admin-logout-btn:hover {
+            background: #b02a37;
+        }
+
+        .admin-main {
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .welcome-bar {
+            background: rgba(255,215,0,0.08);
+            backdrop-filter: blur(8px);
+            border: 1px solid #FFD700;
+            border-radius: 10px;
+            padding: 15px 25px;
+            margin-bottom: 35px;
+            color: #FFD700;
+            font-size: 1rem;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .stat-box {
+            background: rgba(30, 58, 95, 0.55);
+            backdrop-filter: blur(10px);
+            border: 2px solid #28a745;
+            border-radius: 12px;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .stat-box.gold {
+            border-color: #FFD700;
+        }
+
+        .stat-box h3 {
+            color: #aaa;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .stat-box .big-number {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .stat-box.gold .big-number {
+            color: #FFD700;
+        }
+
+        .stat-box .sub-label {
+            color: #888;
+            font-size: 0.85rem;
+            margin-top: 6px;
+        }
+
+        .panel-section {
+            background: rgba(30, 58, 95, 0.55);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(45, 74, 107, 0.7);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .panel-section h2 {
+            color: #FFD700;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #2d4a6b;
+            padding-bottom: 12px;
+        }
+
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .user-table th {
+            background: #002a5c;
+            color: #FFD700;
+            padding: 12px 15px;
+            text-align: left;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .user-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #2d4a6b;
+            color: #ddd;
+            font-size: 0.95rem;
+        }
+
+        .user-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .user-table tr:hover td {
+            background: rgba(255,215,0,0.04);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .badge.yes {
+            background: rgba(40,167,69,0.2);
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+
+        .badge.no {
+            background: rgba(220,53,69,0.2);
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #666;
+            padding: 30px;
+            font-size: 0.95rem;
+        }
+
+        .deposit-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #2d4a6b;
+            font-size: 0.95rem;
+        }
+
+        .deposit-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .deposit-amount {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .deposit-date {
+            color: #888;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            .admin-header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+
+            .stats-row {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-carousel">
+        <div class="bg-slide active" style="background-image:url('adminpics/Screenshot 2026-04-12 at 17-27-39 Google Search.png')"></div>
+        <div class="bg-slide" style="background-image:url('adminpics/Screenshot 2026-04-12 at 17-28-01 Google Search.png')"></div>
+        <div class="bg-slide" style="background-image:url('adminpics/Screenshot 2026-04-12 at 17-28-22 Google Search.png')"></div>
+        <div class="bg-slide" style="background-image:url('adminpics/Screenshot 2026-04-12 at 17-28-44 Google Search.png')"></div>
+        <div class="bg-slide" style="background-image:url('adminpics/Screenshot 2026-04-12 at 17-29-12 Google Search.png')"></div>
+        <div class="bg-overlay"></div>
+    </div>
+
+    <div class="admin-header">
+        <h1>🛡️ URBAN TROVE EARN — ADMIN PANEL</h1>
+        <span id="admin-welcome-name">Welcome, Admin</span>
+        <button class="admin-logout-btn" onclick="adminLogout()">Logout</button>
+    </div>
+
+    <div class="admin-main">
+
+        <div class="welcome-bar" id="admin-welcome-bar">
+            Logged in as: <strong id="admin-display-name">—</strong> &nbsp;|&nbsp; Last refreshed: <span id="refresh-time">—</span>
+        </div>
+
+        <!-- Summary Stats (counts only) -->
+        <div class="stats-row">
+            <div class="stat-box">
+                <h3>Total Registered Users</h3>
+                <div class="big-number" id="stat-total-users">0</div>
+                <div class="sub-label">accounts created</div>
+            </div>
+            <div class="stat-box gold">
+                <h3>Total Deposits Made</h3>
+                <div class="big-number" id="stat-total-deposits">0</div>
+                <div class="sub-label">deposit transactions</div>
+            </div>
+            <div class="stat-box">
+                <h3>Total Referral Deposits</h3>
+                <div class="big-number" id="stat-referral-deposits">0</div>
+                <div class="sub-label">via referral code</div>
+            </div>
+            <div class="stat-box gold">
+                <h3>Active VIP Tier</h3>
+                <div class="big-number" id="stat-vip-tier" style="font-size:1.6rem;">None</div>
+                <div class="sub-label">current user tier</div>
+            </div>
+        </div>
+
+        <div class="panel-section">
+            <p style="color:#aaa;font-size:0.9rem;">Detailed user information, full transaction history, system secrets and owner tools are restricted to the Owners Page.</p>
+        </div>
+
+    </div>
+
+    <!-- Hidden star link to Owners Page — only visible after admin login -->
+    <div style="text-align:center;padding:20px 0 40px;position:relative;z-index:1;">
+        <a href="owners-login.html" id="owners-star-link" style="color:rgba(255,215,0,0.45);font-size:1.4rem;text-decoration:none;letter-spacing:2px;transition:color 0.3s;" onmouseover="this.style.color='rgba(255,215,0,0.9)'" onmouseout="this.style.color='rgba(255,215,0,0.45)'" title="">&#9733;</a>
+    </div>
+
+    <script src="admin.js"></script>
+    <script>
+        const bgSlides = document.querySelectorAll('.bg-slide');
+        let bgCurrent = 0;
+        setInterval(() => {
+            bgSlides[bgCurrent].classList.remove('active');
+            bgCurrent = (bgCurrent + 1) % bgSlides.length;
+            bgSlides[bgCurrent].classList.add('active');
+        }, 4000);
+    </script>
+</body>
+</html>

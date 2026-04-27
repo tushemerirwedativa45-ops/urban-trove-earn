@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urban Trove Earn - Home</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <button class="hamburger" id="hamburger-btn" onclick="document.querySelector('nav ul').classList.toggle('open')"><span></span><span></span><span></span></button>
+            <div class="logo"><img src="logo.png" alt="Urban Trove Earn Logo"></div>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="deposit.html">Deposit</a></li>
+                <li><a href="withdraw.html">Withdraw</a></li>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="games.html">Games</a></li>
+                <li><a href="vip.html">VIP</a></li>
+                <li><a href="referral.html">Referral</a></li>
+                <li id="nav-register"><a href="register.html">Register</a></li>
+                <li id="nav-login"><a href="login.html">Log In</a></li><li><button id="logout-btn" onclick="handleLogout()" style="display:none;background:none;border:none;color:white;cursor:pointer;font-size:1rem;padding:0;">Log Out</button></li>
+                <li><a href="profile.html">Profile</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="about.html">About</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero-carousel">
+            <div class="carousel-container">
+                <div class="carousel-wrapper">
+                    <div class="carousel-slide active" style="background-image: url('homepics/make it.png')"></div>
+                    <div class="carousel-slide" style="background-image: url('homepics/make money.png')"></div>
+                    <div class="carousel-slide" style="background-image: url('homepics/money.png')"></div>
+                    <div class="carousel-slide" style="background-image: url('homepics/online earn.png')"></div>
+                    <div class="carousel-slide" style="background-image: url('homepics/online money.png')"></div>
+                    <div class="carousel-slide" style="background-image: url('homepics/wow money.png')"></div>
+                </div>
+                <div class="carousel-overlay">
+                    <h1 class="carousel-title">Welcome to Urban Trove Earn</h1>
+                    <p class="carousel-subtitle">Deposit your money and watch it grow with our innovative earning platform.</p>
+                    <a href="deposit.html" class="btn-primary">Start Earning Now</a>
+                </div>
+                <div class="carousel-indicators">
+                    <span class="indicator active" data-slide="0"></span>
+                    <span class="indicator" data-slide="1"></span>
+                    <span class="indicator" data-slide="2"></span>
+                    <span class="indicator" data-slide="3"></span>
+                    <span class="indicator" data-slide="4"></span>
+                    <span class="indicator" data-slide="5"></span>
+                </div>
+            </div>
+        </section>
+
+        <section class="features">
+            <h2>Why Choose Urban Trove Earn?</h2>
+            <div class="feature-grid">
+                <div class="feature">
+                    <h3>High Returns</h3>
+                    <p>Earn up to 15% annual returns on your deposits.</p>
+                </div>
+                <div class="feature">
+                    <h3>Secure & Reliable</h3>
+                    <p>Your money is protected with bank-level security.</p>
+                </div>
+                <div class="feature">
+                    <h3>Easy Deposits</h3>
+                    <p>Connect your Airtel account for seamless deposits.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Urban Trove Earn. All rights reserved.</p>
+        <a href="admin.html" style="display:block;margin-top:8px;color:rgba(255,255,255,0.15);font-size:0.7rem;text-decoration:none;letter-spacing:1px;">&#9679;</a>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+        const slides = document.querySelectorAll('.carousel-slide');
+        const indicators = document.querySelectorAll('.indicator');
+        let currentSlide = 0;
+        const totalSlides = slides.length;
+
+        function showSlide(n) {
+            slides.forEach(slide => slide.classList.remove('active'));
+            indicators.forEach(indicator => indicator.classList.remove('active'));
+            
+            currentSlide = (n + totalSlides) % totalSlides;
+            slides[currentSlide].classList.add('active');
+            indicators[currentSlide].classList.add('active');
+        }
+
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+
+        // Auto-advance every 4 seconds
+        setInterval(nextSlide, 4000);
+
+        // Click indicators to go to specific slide
+        indicators.forEach((indicator, index) => {
+            indicator.addEventListener('click', () => showSlide(index));
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') showSlide(currentSlide - 1);
+            if (e.key === 'ArrowRight') showSlide(currentSlide + 1);
+        });
+    </script>
+    button onclick="deposit()">Deposit</button>
+    
+    <script>
+    function deposit() {
+      fetch("http://localhost:3000/deposit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          amount: 1000,
+          phone: "2567XXXXXXXX"
+        })
+      })
+      .then(res => res.json())
+      .then(data => alert(data.message));
+    }
+    </script>
+</body>
+</html>

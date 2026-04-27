@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urban Trove Earn - Games</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <button class="hamburger" id="hamburger-btn" onclick="document.querySelector('nav ul').classList.toggle('open')"><span></span><span></span><span></span></button>
+            <div class="logo"><img src="logo.png" alt="Urban Trove Earn Logo"></div>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="deposit.html">Deposit</a></li>
+                <li><a href="withdraw.html">Withdraw</a></li>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="games.html">Games</a></li>
+                <li><a href="vip.html">VIP</a></li>
+                <li><a href="referral.html">Referral</a></li>
+                <li id="nav-register"><a href="register.html">Register</a></li>
+                <li id="nav-login"><a href="login.html">Log In</a></li><li><button id="logout-btn" onclick="handleLogout()" style="display:none;background:none;border:none;color:white;cursor:pointer;font-size:1rem;padding:0;">Log Out</button></li>
+                <li><a href="profile.html">Profile</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="about.html">About</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="games-hero">
+            <div class="hero-content">
+                <h1>🎮 Casino Games</h1>
+                <p>Select a game and start winning</p>
+            </div>
+        </section>
+
+        <!-- Game Selection -->
+        <section class="game-selection" id="gameSelection">
+            <div class="games-grid">
+                <div class="game-card" id="airplaneGameCard" onclick="selectGame('airplane')">
+                    <div class="game-icon">✈️</div>
+                    <h3>Urban Jet</h3>
+                    <p>Watch the jet fly and cash out before it crashes</p>
+                    <div class="game-stats-card">
+                        <span class="rtp">97% RTP</span>
+                        <span class="players">2.5K Playing</span>
+                    </div>
+                    <button class="btn-play">PLAY NOW</button>
+                </div>
+
+                <div class="game-card" onclick="alert('More games coming soon!')">
+                    <div class="game-icon">🎰</div>
+                    <h3>Slot Machine</h3>
+                    <p>Spin the reels and hit the jackpot</p>
+                    <div class="game-stats-card">
+                        <span class="rtp">95% RTP</span>
+                        <span class="players">Coming Soon</span>
+                    </div>
+                    <button class="btn-play" disabled>COMING SOON</button>
+                </div>
+
+                <div class="game-card" onclick="alert('More games coming soon!')">
+                    <div class="game-icon">🎲</div>
+                    <h3>Dice Game</h3>
+                    <p>Roll the dice and predict the outcome</p>
+                    <div class="game-stats-card">
+                        <span class="rtp">96% RTP</span>
+                        <span class="players">Coming Soon</span>
+                    </div>
+                    <button class="btn-play" disabled>COMING SOON</button>
+                </div>
+
+                <div class="game-card" onclick="alert('More games coming soon!')">
+                    <div class="game-icon">🎯</div>
+                    <h3>Lottery</h3>
+                    <p>Pick numbers and win big prizes</p>
+                    <div class="game-stats-card">
+                        <span class="rtp">94% RTP</span>
+                        <span class="players">Coming Soon</span>
+                    </div>
+                    <button class="btn-play" disabled>COMING SOON</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Urban Jet Game Interface -->
+        <section class="urbanjet-game-section" id="urbanjetGameSection" style="display: none;">
+            <div class="urbanjet-interface">
+                <!-- Top Section - Balance and Title -->
+                <div class="interface-top">
+                    <div class="balance-display">
+                        <span class="balance-label">Balance:</span>
+                        <span class="balance-amount" id="gameBalanceAmount">UGX 1,000</span>
+                    </div>
+                    <div class="game-title-display">URBAN JET</div>
+                </div>
+
+                <!-- Main Game Area -->
+                <div class="interface-main">
+                    <!-- Left Side - Betting Slots -->
+                    <div class="betting-side">
+                        <!-- Bet Slot 1 -->
+                        <div class="bet-placeholder" id="betPlaceholder1">
+                            <div class="bet-header">
+                                <span class="bet-number">SLOT 1</span>
+                                <span class="bet-status" id="betStatus1"></span>
+                            </div>
+
+                            <div class="stake-controls">
+                                <button class="stake-btn minus-btn" onclick="decreaseBet(1)">−</button>
+                                <div class="stake-display">
+                                    <span class="stake-label">STAKE</span>
+                                    <span class="stake-amount" id="stakeAmount1">UGX 5,000</span>
+                                </div>
+                                <button class="stake-btn plus-btn" onclick="increaseBet(1)">+</button>
+                            </div>
+
+                            <div class="cashout-section" id="cashoutSection1" style="display: none;">
+                                <button class="cashout-btn" onclick="cashoutBet(1)">CASHOUT</button>
+                                <span class="cashout-multiplier" id="cashoutMultiplier1">1.00x</span>
+                            </div>
+
+                            <button class="place-bet-btn" id="placeBetBtn1" onclick="placeBet(1)">PLACE BET</button>
+                            <div class="bet-result-display" id="betResult1"></div>
+                        </div>
+
+                        <!-- Bet Slot 2 -->
+                        <div class="bet-placeholder" id="betPlaceholder2">
+                            <div class="bet-header">
+                                <span class="bet-number">SLOT 2</span>
+                                <span class="bet-status" id="betStatus2"></span>
+                            </div>
+
+                            <div class="stake-controls">
+                                <button class="stake-btn minus-btn" onclick="decreaseBet(2)">−</button>
+                                <div class="stake-display">
+                                    <span class="stake-label">STAKE</span>
+                                    <span class="stake-amount" id="stakeAmount2">UGX 3,000</span>
+                                </div>
+                                <button class="stake-btn plus-btn" onclick="increaseBet(2)">+</button>
+                            </div>
+
+                            <div class="cashout-section" id="cashoutSection2" style="display: none;">
+                                <button class="cashout-btn" onclick="cashoutBet(2)">CASHOUT</button>
+                                <span class="cashout-multiplier" id="cashoutMultiplier2">1.00x</span>
+                            </div>
+
+                            <button class="place-bet-btn" id="placeBetBtn2" onclick="placeBet(2)">PLACE BET</button>
+                            <div class="bet-result-display" id="betResult2"></div>
+                        </div>
+                    </div>
+
+                    <!-- Center - Game Canvas -->
+                    <div class="game-canvas-area">
+                        <canvas id="jetCanvas" width="800" height="500"></canvas>
+
+                        <!-- Multiplier Display Overlay -->
+                        <div class="multiplier-overlay" id="multiplierOverlay">
+                            <div class="multiplier-text" id="multiplierText">1.00x</div>
+                        </div>
+
+                        <!-- Crash Indicator -->
+                        <div class="crash-overlay" id="crashOverlay" style="display:none;">
+                            <div class="crash-text">💥 CRASHED!</div>
+                            <div class="crash-multiplier" id="crashMultiplierDisplay"></div>
+                            <div class="next-round-countdown" id="nextRoundCountdown">Next round in 5s</div>
+                        </div>
+                    </div>
+
+                    <!-- Right Side - Controls -->
+                    <div class="control-side">
+                        <div class="game-stats-display">
+                            <div class="stat-item">
+                                <span class="stat-label">Rounds:</span>
+                                <span class="stat-value" id="roundsPlayed">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Winnings:</span>
+                                <span class="stat-value" id="totalWinnings">UGX 0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Section - Historical Odds -->
+                <div class="historical-odds-bar">
+                    <div class="odds-label">Previous Crashes:</div>
+                    <div class="odds-history" id="oddsHistory"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Urban Trove Earn. All rights reserved.</p>
+    </footer>
+
+    <script src="script.js"></script>
+    <script src="airplane-game.js"></script>
+</body>
+</html>
