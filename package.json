@@ -1,0 +1,6 @@
+{
+  "name": "urban-trove-earn",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Urban Trove Earn - root package for Railpack Node.js provider detection"
+}
