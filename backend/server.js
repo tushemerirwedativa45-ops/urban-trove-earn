@@ -1,16 +1,76 @@
 const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
+const { Pool } = require('pg');
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// ── In-memory store ──────────────────────────────────────────
-let userDatabase     = [];
-let depositDatabase  = [];
-let withdrawDatabase = [];
-let referralDatabase = {};
+// ════════════════════════════════════════════════════════════
+//  DATABASE CONNECTION
+//  On Render: set DATABASE_URL environment variable
+//  Locally: uses localhost PostgreSQL
+// ════════════════════════════════════════════════════════════
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL || 'postgresql://localhost:5432/urban_trove_earn',
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+});
+
+// ── Create tables if they don't exist ────────────────────────
+async function initDB() {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                id               SERIAL PRIMARY KEY,
+                username         VARCHAR(100) NOT NULL,
+                lastname         VARCHAR(100),
+                email            VARCHAR(200) UNIQUE NOT NULL,
+                country          VARCHAR(100),
+                password         VARCHAR(200) NOT NULL,
+                referral_code    VARCHAR(50) UNIQUE,
+                used_referral    VARCHAR(50),
+                vip_tier         VARCHAR(20) DEFAULT 'None',
+                referral_joins   INTEGER DEFAULT 0,
+                referral_depositors INTEGER DEFAULT 0,
+                registered_at    TIMESTAMP DEFAULT NOW()
+            )
+        `);
+
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS deposits (
+                id            SERIAL PRIMARY KEY,
+                tx_ref        VARCHAR(100),
+                amount        BIGINT NOT NULL,
+                email         VARCHAR(200),
+                phone         VARCHAR(50),
+                name          VARCHAR(200),
+                plan_amount   BIGINT,
+                referral_code VARCHAR(50),
+                status        VARCHAR(50) DEFAULT 'completed',
+                created_at    TIMESTAMP DEFAULT NOW()
+            )
+        `);
+
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS withdrawals (
+                id          SERIAL PRIMARY KEY,
+                reference   VARCHAR(100),
+                amount      BIGINT NOT NULL,
+                phone       VARCHAR(50),
+                email       VARCHAR(200),
+                name        VARCHAR(200),
+                network     VARCHAR(50),
+                status      VARCHAR(50) DEFAULT 'pending',
+                created_at  TIMESTAMP DEFAULT NOW()
+            )
+        `);
+
+        console.log('[DB] Tables ready ✅');
+    } catch (err) {
+        console.error('[DB ERROR]', err.message);
+    }
+}
 
 // ── Helpers ───────────────────────────────────────────────────
 function generateReferralCode(username) {
@@ -38,90 +98,141 @@ app.get('/', (req, res) => {
 });
 
 // ════════════════════════════════════════════════════════════
-//  1. REGISTER USER & GENERATE REFERRAL LINK
+//  1. REGISTER USER
 // ════════════════════════════════════════════════════════════
-app.post('/api/register', (req, res) => {
+app.post('/api/register', async (req, res) => {
     const { username, lastname, email, country, password, referralCode } = req.body;
 
     if (!username || !email || !password) {
         return res.status(400).json({ status: 'error', message: 'Missing required fields' });
     }
 
-    if (userDatabase.find(u => u.email === email)) {
-        return res.status(400).json({ status: 'error', message: 'Email already registered' });
-    }
-
-    const newReferralCode = generateReferralCode(username);
-
-    const newUser = {
-        username,
-        lastname,
-        email,
-        country,
-        password,
-        referralCode:       newReferralCode,
-        usedReferralCode:   referralCode || null,
-        registeredAt:       new Date().toLocaleString(),
-        vipTier:            'None',
-        referralJoins:      0,
-        referralDepositors: 0
-    };
-
-    userDatabase.push(newUser);
-    referralDatabase[newReferralCode] = { joins: [], depositors: [] };
-
-    if (referralCode && referralDatabase[referralCode]) {
-        referralDatabase[referralCode].joins.push({ username, email, joinedAt: new Date().toLocaleString() });
-        const referrer = userDatabase.find(u => u.referralCode === referralCode);
-        if (referrer) {
-            referrer.referralJoins++;
-            console.log(`[REFERRAL] ${username} joined via ${referrer.username}'s link`);
+    try {
+        // Check if email already exists
+        const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+        if (existing.rows.length > 0) {
+            return res.status(400).json({ status: 'error', message: 'Email already registered' });
         }
+
+        const newReferralCode = generateReferralCode(username);
+
+        // Insert new user
+        await pool.query(`
+            INSERT INTO users (username, lastname, email, country, password, referral_code, used_referral)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `, [username, lastname, email, country, password, newReferralCode, referralCode || null]);
+
+        // If registered via referral link — update referrer join count
+        if (referralCode) {
+            await pool.query(`
+                UPDATE users SET referral_joins = referral_joins + 1
+                WHERE referral_code = $1
+            `, [referralCode]);
+        }
+
+        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        console.log(`[REGISTER] ${username} | Code: ${newReferralCode}`);
+
+        return res.json({
+            status:       'success',
+            message:      'Registration successful',
+            referralCode: newReferralCode,
+            referralLink: `${baseUrl}/register.html?ref=${newReferralCode}`
+        });
+
+    } catch (err) {
+        console.error('[REGISTER ERROR]', err.message);
+        return res.status(500).json({ status: 'error', message: 'Registration failed' });
     }
-
-    console.log(`[REGISTER] ${username} | Code: ${newReferralCode}`);
-
-    return res.json({
-        status:       'success',
-        message:      'Registration successful',
-        referralCode: newReferralCode,
-        referralLink: `http://localhost:3000/register.html?ref=${newReferralCode}`
-    });
 });
 
 // ════════════════════════════════════════════════════════════
-//  2. GET REFERRAL STATS
+//  2. LOGIN USER
 // ════════════════════════════════════════════════════════════
-app.get('/api/referral-stats/:referralCode', (req, res) => {
-    const code = req.params.referralCode;
-    const user = userDatabase.find(u => u.referralCode === code);
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body;
 
-    if (!user) {
-        return res.status(404).json({ status: 'error', message: 'Referral code not found' });
+    if (!username || !password) {
+        return res.status(400).json({ status: 'error', message: 'Missing username or password' });
     }
 
-    const depositors    = user.referralDepositors;
-    const vipInfo       = getVipInfo(depositors);
-    const thresholds    = [5, 10, 15, 20, 25];
-    const nextThreshold = thresholds.find(t => t > depositors) || 25;
+    try {
+        const result = await pool.query(
+            'SELECT * FROM users WHERE username = $1 AND password = $2',
+            [username, password]
+        );
 
-    return res.json({
-        status:          'success',
-        referralCode:    code,
-        referralLink:    `http://localhost:3000/register.html?ref=${code}`,
-        joins:           user.referralJoins,
-        depositors,
-        vipTier:         vipInfo.tier,
-        vipBonus:        vipInfo.bonus,
-        nextVipAt:       nextThreshold,
-        progressPercent: Math.min(Math.round((depositors / nextThreshold) * 100), 100)
-    });
+        if (result.rows.length === 0) {
+            return res.status(401).json({ status: 'error', message: 'Incorrect username or password' });
+        }
+
+        const user = result.rows[0];
+        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+
+        return res.json({
+            status:       'success',
+            message:      'Login successful',
+            username:     user.username,
+            lastname:     user.lastname,
+            email:        user.email,
+            country:      user.country,
+            referralCode: user.referral_code,
+            referralLink: `${baseUrl}/register.html?ref=${user.referral_code}`,
+            vipTier:      user.vip_tier,
+            referralJoins: user.referral_joins,
+            referralDepositors: user.referral_depositors,
+            registeredAt: user.registered_at
+        });
+
+    } catch (err) {
+        console.error('[LOGIN ERROR]', err.message);
+        return res.status(500).json({ status: 'error', message: 'Login failed' });
+    }
 });
 
 // ════════════════════════════════════════════════════════════
-//  3. RECORD DEPOSIT (called by frontend after payment confirmed)
+//  3. GET REFERRAL STATS
 // ════════════════════════════════════════════════════════════
-app.post('/api/record-deposit', (req, res) => {
+app.get('/api/referral-stats/:referralCode', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM users WHERE referral_code = $1',
+            [req.params.referralCode]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ status: 'error', message: 'Referral code not found' });
+        }
+
+        const user          = result.rows[0];
+        const depositors    = user.referral_depositors;
+        const vipInfo       = getVipInfo(depositors);
+        const thresholds    = [5, 10, 15, 20, 25];
+        const nextThreshold = thresholds.find(t => t > depositors) || 25;
+        const baseUrl       = process.env.BASE_URL || 'http://localhost:3000';
+
+        return res.json({
+            status:          'success',
+            referralCode:    user.referral_code,
+            referralLink:    `${baseUrl}/register.html?ref=${user.referral_code}`,
+            joins:           user.referral_joins,
+            depositors,
+            vipTier:         vipInfo.tier,
+            vipBonus:        vipInfo.bonus,
+            nextVipAt:       nextThreshold,
+            progressPercent: Math.min(Math.round((depositors / nextThreshold) * 100), 100)
+        });
+
+    } catch (err) {
+        console.error('[REFERRAL STATS ERROR]', err.message);
+        return res.status(500).json({ status: 'error', message: 'Failed to get referral stats' });
+    }
+});
+
+// ════════════════════════════════════════════════════════════
+//  4. RECORD DEPOSIT
+// ════════════════════════════════════════════════════════════
+app.post('/api/record-deposit', async (req, res) => {
     const { amount, email, phone, name, planAmount, referralCode, txRef } = req.body;
 
     if (!amount || !email) {
@@ -132,43 +243,50 @@ app.post('/api/record-deposit', (req, res) => {
         return res.status(400).json({ status: 'error', message: 'Minimum deposit is UGX 30,000' });
     }
 
-    depositDatabase.push({
-        txRef:       txRef || `UTE-${Date.now()}`,
-        amount,
-        email,
-        phone,
-        name,
-        planAmount,
-        referralCode: referralCode || '',
-        status:       'completed',
-        timestamp:    new Date().toLocaleString()
-    });
+    try {
+        await pool.query(`
+            INSERT INTO deposits (tx_ref, amount, email, phone, name, plan_amount, referral_code, status)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, 'completed')
+        `, [txRef || `UTE-${Date.now()}`, amount, email, phone, name, planAmount, referralCode || '']);
 
-    // Update referrer depositor count if applicable
-    if (referralCode) {
-        const depositorUser = userDatabase.find(u => u.email === email);
-        const referrer      = userDatabase.find(u => u.referralCode === referralCode);
-        if (referrer && depositorUser) {
-            const alreadyCounted = referralDatabase[referralCode]?.depositors.find(d => d.email === email);
-            if (!alreadyCounted) {
-                referralDatabase[referralCode].depositors.push({ email, amount, depositedAt: new Date().toLocaleString() });
-                referrer.referralDepositors++;
-                const vipInfo  = getVipInfo(referrer.referralDepositors);
-                referrer.vipTier = vipInfo.tier;
-                console.log(`[REFERRAL DEPOSIT] ${email} via ${referrer.username} | VIP: ${referrer.vipTier}`);
+        // Update referrer depositor count
+        if (referralCode) {
+            // Check not already counted
+            const already = await pool.query(
+                'SELECT id FROM deposits WHERE email = $1 AND referral_code = $2',
+                [email, referralCode]
+            );
+            if (already.rows.length === 1) {
+                // First deposit via this referral — update referrer
+                const referrer = await pool.query(
+                    'SELECT id, referral_depositors FROM users WHERE referral_code = $1',
+                    [referralCode]
+                );
+                if (referrer.rows.length > 0) {
+                    const newCount = referrer.rows[0].referral_depositors + 1;
+                    const vipInfo  = getVipInfo(newCount);
+                    await pool.query(
+                        'UPDATE users SET referral_depositors = $1, vip_tier = $2 WHERE referral_code = $3',
+                        [newCount, vipInfo.tier, referralCode]
+                    );
+                    console.log(`[REFERRAL DEPOSIT] ${email} | VIP updated: ${vipInfo.tier}`);
+                }
             }
         }
+
+        console.log(`[DEPOSIT RECORDED] ${email} — UGX ${amount}`);
+        return res.json({ status: 'success', message: 'Deposit recorded successfully' });
+
+    } catch (err) {
+        console.error('[DEPOSIT ERROR]', err.message);
+        return res.status(500).json({ status: 'error', message: 'Failed to record deposit' });
     }
-
-    console.log(`[DEPOSIT RECORDED] ${email} — UGX ${amount}`);
-
-    return res.json({ status: 'success', message: 'Deposit recorded successfully' });
 });
 
 // ════════════════════════════════════════════════════════════
-//  4. RECORD WITHDRAWAL (called by frontend when user withdraws)
+//  5. RECORD WITHDRAWAL
 // ════════════════════════════════════════════════════════════
-app.post('/api/record-withdrawal', (req, res) => {
+app.post('/api/record-withdrawal', async (req, res) => {
     const { amount, phone, email, name, network } = req.body;
 
     if (!amount || !phone || !name) {
@@ -181,62 +299,93 @@ app.post('/api/record-withdrawal', (req, res) => {
 
     const reference = `UTE-WD-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
 
-    withdrawDatabase.push({
-        reference,
-        amount,
-        phone,
-        email,
-        name,
-        network:   network || 'MTN',
-        status:    'pending',
-        timestamp: new Date().toLocaleString()
-    });
+    try {
+        await pool.query(`
+            INSERT INTO withdrawals (reference, amount, phone, email, name, network, status)
+            VALUES ($1, $2, $3, $4, $5, $6, 'pending')
+        `, [reference, amount, phone, email, name, network || 'MTN']);
 
-    console.log(`[WITHDRAWAL RECORDED] ${phone} — UGX ${amount} | ref: ${reference}`);
+        console.log(`[WITHDRAWAL RECORDED] ${phone} — UGX ${amount} | ref: ${reference}`);
 
-    return res.json({
-        status:    'success',
-        message:   `Withdrawal of UGX ${Number(amount).toLocaleString()} recorded for ${phone}`,
-        reference
-    });
+        return res.json({
+            status:    'success',
+            message:   `Withdrawal of UGX ${Number(amount).toLocaleString()} recorded for ${phone}`,
+            reference
+        });
+
+    } catch (err) {
+        console.error('[WITHDRAWAL ERROR]', err.message);
+        return res.status(500).json({ status: 'error', message: 'Failed to record withdrawal' });
+    }
 });
 
 // ════════════════════════════════════════════════════════════
-//  5. VIEW ALL DEPOSITS (Admin)
+//  6. VIEW ALL DEPOSITS (Admin)
 // ════════════════════════════════════════════════════════════
-app.get('/api/view-deposits', (req, res) => {
-    res.json({
-        title:       'All Deposit Records — Urban Trove Earn',
-        total:       depositDatabase.length,
-        totalAmount: depositDatabase.reduce((s, d) => s + d.amount, 0),
-        deposits:    depositDatabase
-    });
+app.get('/api/view-deposits', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM deposits ORDER BY created_at DESC');
+        const total  = result.rows.reduce((s, d) => s + Number(d.amount), 0);
+        res.json({
+            title:       'All Deposit Records — Urban Trove Earn',
+            total:       result.rows.length,
+            totalAmount: total,
+            deposits:    result.rows
+        });
+    } catch (err) {
+        res.status(500).json({ status: 'error', message: err.message });
+    }
 });
 
 // ════════════════════════════════════════════════════════════
-//  6. VIEW ALL WITHDRAWALS (Admin)
+//  7. VIEW ALL WITHDRAWALS (Admin)
 // ════════════════════════════════════════════════════════════
-app.get('/api/view-withdrawals', (req, res) => {
-    res.json({
-        title:       'All Withdrawal Records — Urban Trove Earn',
-        total:       withdrawDatabase.length,
-        withdrawals: withdrawDatabase
-    });
+app.get('/api/view-withdrawals', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM withdrawals ORDER BY created_at DESC');
+        res.json({
+            title:       'All Withdrawal Records — Urban Trove Earn',
+            total:       result.rows.length,
+            withdrawals: result.rows
+        });
+    } catch (err) {
+        res.status(500).json({ status: 'error', message: err.message });
+    }
+});
+
+// ════════════════════════════════════════════════════════════
+//  8. VIEW ALL USERS (Admin)
+// ════════════════════════════════════════════════════════════
+app.get('/api/view-users', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT id, username, lastname, email, country, referral_code, vip_tier, referral_joins, referral_depositors, registered_at FROM users ORDER BY registered_at DESC'
+        );
+        res.json({
+            title: 'All Registered Users — Urban Trove Earn',
+            total: result.rows.length,
+            users: result.rows
+        });
+    } catch (err) {
+        res.status(500).json({ status: 'error', message: err.message });
+    }
 });
 
 // ════════════════════════════════════════════════════════════
 //  START SERVER
 // ════════════════════════════════════════════════════════════
-app.listen(3000, () => {
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, async () => {
+    await initDB();
     console.log('');
     console.log('╔══════════════════════════════════════════╗');
-    console.log('║   Urban Trove Earn Backend — Port 3000   ║');
+    console.log(`║   Urban Trove Earn — Port ${PORT}           ║`);
     console.log('╠══════════════════════════════════════════╣');
-    console.log('║  Frontend:  http://localhost:3000         ║');
+    console.log('║  Frontend:  http://localhost:' + PORT + '         ║');
     console.log('║  Register:  POST /api/register            ║');
+    console.log('║  Login:     POST /api/login               ║');
     console.log('║  Deposit:   POST /api/record-deposit      ║');
     console.log('║  Withdraw:  POST /api/record-withdrawal   ║');
-    console.log('║  Referral:  GET  /api/referral-stats/:code║');
     console.log('║  Admin:     GET  /api/view-deposits       ║');
     console.log('╚══════════════════════════════════════════╝');
     console.log('');
