@@ -93,4 +93,38 @@ function escHtml(str) {
 // Run panel loader if we are on the panel page
 if (document.getElementById('stat-total-users')) {
     loadPanelData();
+
+    // Admin change password
+    const adminPwdForm = document.getElementById('admin-change-pwd-form');
+    if (adminPwdForm) {
+        adminPwdForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const adminName = sessionStorage.getItem(ADMIN_SESSION_KEY);
+            const current   = document.getElementById('acp-current').value;
+            const newPwd    = document.getElementById('acp-new').value;
+            const confirm   = document.getElementById('acp-confirm').value;
+            const status    = document.getElementById('acp-status');
+
+            const admin = ADMINS.find(a => a.username.toLowerCase() === adminName.toLowerCase());
+            if (!admin || current !== admin.password) {
+                status.textContent = '❌ Current password is incorrect.';
+                status.style.cssText = 'display:block;background:rgba(220,53,69,0.2);color:#ff6b6b;border:1px solid #dc3545;';
+                return;
+            }
+            if (newPwd.length < 5) {
+                status.textContent = '❌ New password must be at least 5 characters.';
+                status.style.cssText = 'display:block;background:rgba(220,53,69,0.2);color:#ff6b6b;border:1px solid #dc3545;';
+                return;
+            }
+            if (newPwd !== confirm) {
+                status.textContent = '❌ Passwords do not match.';
+                status.style.cssText = 'display:block;background:rgba(220,53,69,0.2);color:#ff6b6b;border:1px solid #dc3545;';
+                return;
+            }
+            admin.password = newPwd;
+            status.textContent = '✅ Password updated successfully! Remember your new password.';
+            status.style.cssText = 'display:block;background:rgba(40,167,69,0.2);color:#28a745;border:1px solid #28a745;';
+            adminPwdForm.reset();
+        });
+    }
 }
