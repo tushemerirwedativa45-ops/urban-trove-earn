@@ -3,7 +3,7 @@
 //  - 16-day lock from deposit date
 //  - Shows countdown per deposit
 //  - Only unlocked earnings can be withdrawn
-//  - Calls backend Flutterwave Transfer API
+//  - Calls backend to record withdrawal
 // ═══════════════════════════════════════════════════════════
 
 const LOCK_DAYS    = 16;

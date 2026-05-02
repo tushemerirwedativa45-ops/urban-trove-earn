@@ -1,7 +1,7 @@
 {
   "name": "urban-trove-earn-backend",
   "version": "1.0.0",
-  "description": "Urban Trove Earn Backend with Flutterwave Integration",
+  "description": "Urban Trove Earn Backend",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
