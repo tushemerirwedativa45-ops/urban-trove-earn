@@ -113,10 +113,10 @@ function updateDashboard() {
     }
 }
 
-// Backend API base URL — change to your live domain when deploying
+// Backend API base URL
 const API_BASE = 'http://localhost:3000';
 
-// Handle deposit form submission — calls Flutterwave via backend
+// Handle deposit form submission
 async function handleDeposit(event) {
     event.preventDefault();
 
@@ -130,175 +130,63 @@ async function handleDeposit(event) {
 
     const amount = parseFloat(planInput?.value);
 
-    // Validate plan
     if (!amount || amount < 30000) {
         showStatus('Please choose a valid investment plan with at least UGX 30,000.', 'error');
         return;
     }
 
-    // Calculate return amount — fixed plans use planOptions, custom uses 23%
     const returnAmount = planOptions[amount] || Math.round(amount * (1 + RETURN_RATE));
 
-    // Validate user details
     if (!name || !email || !phone) {
         showStatus('Please fill in your name, email and phone number.', 'error');
         return;
     }
 
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '⏳ Processing...'; }
-    showStatus('Connecting to Flutterwave...', '');
+    showStatus('Recording your deposit...', '');
 
-    try {
-        const response = await fetch(`${API_BASE}/api/initiate-payment`, {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ amount, email, phone, name, network, planAmount: returnAmount, referralCode: referralCode || '' })
+    // Save deposit locally
+    const txRef = `UTE-${Date.now()}`;
+    userData.balance      += amount;
+    userData.deposits     += 1;
+    userData.depositTotal  = (userData.depositTotal || 0) + amount;
+    userData.transactions.unshift({
+        date:             new Date().toLocaleDateString(),
+        depositTimestamp: Date.now(),
+        type:             'Deposit',
+        amount:           amount,
+        earnings:         Math.round(amount * RETURN_RATE),
+        status:           'Completed',
+        txRef
+    });
+    saveData();
+    updateDashboard();
+
+    // Record on backend
+    fetch(`${API_BASE}/api/record-deposit`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount, email, phone, name, network, planAmount: returnAmount, referralCode: referralCode || '', txRef })
+    }).catch(() => {});
+
+    showStatus(`✅ Deposit of UGX ${amount.toLocaleString()} recorded successfully! Your 23% earnings will be available after 16 days.`, 'success');
+
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '💳 DEPOSIT NOW'; }
+
+    // Handle referral
+    if (referralCode && referralCode === userData.referralCode) {
+        userData.referralDepositors = (userData.referralDepositors || 0) + 1;
+        userData.transactions.unshift({
+            date:   new Date().toLocaleDateString(),
+            type:   'Referral Deposit',
+            amount: amount,
+            status: 'Completed'
         });
-
-        const data = await response.json();
-
-        if (data.status === 'success' && data.paymentLink) {
-            // Save pending transaction locally
-            userData.transactions.unshift({
-                date:      new Date().toLocaleDateString(),
-                depositTimestamp: Date.now(),
-                type:      'Deposit',
-                amount:    amount,
-                earnings:  Math.round(amount * RETURN_RATE),
-                status:    'Pending',
-                txRef:     data.txRef
-            });
-            saveData();
-            showStatus('Redirecting to Flutterwave payment page...', 'success');
-            setTimeout(() => { window.location.href = data.paymentLink; }, 800);
-        } else {
-            showStatus(data.message || 'Payment initiation failed. Try again.', 'error');
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '💳 PAY WITH FLUTTERWAVE'; }
-        }
-
-    } catch (err) {
-        showStatus('Could not connect to payment server. Make sure the backend is running.', 'error');
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '💳 PAY WITH FLUTTERWAVE'; }
+        saveData();
     }
 }
 
-// Handle payment callback — runs on deposit.html after Flutterwave redirects back
-function handlePaymentCallback() {
-    const params  = new URLSearchParams(window.location.search);
-    const payment = params.get('payment');
-    const amount  = parseFloat(params.get('amount'));
-    const txRef   = params.get('txRef');
-
-    if (!payment) return;
-
-    if (payment === 'success' && amount) {
-        const returnAmt  = planOptions[amount] || Math.round(amount * (1 + RETURN_RATE));
-        const currentVip = getVipInfo(userData.referralDepositors || 0);
-
-        // Update balance and deposit count
-        userData.balance      += amount;
-        userData.deposits     += 1;
-        userData.depositTotal  = (userData.depositTotal || 0) + amount;
-        userData.vipTier       = currentVip.tier;
-
-        // Mark pending transaction as completed
-        const pending = userData.transactions.find(t => t.status === 'Pending' && t.txRef === txRef);
-        if (pending) {
-            pending.status = 'Completed';
-            pending.depositTimestamp = pending.depositTimestamp || Date.now();
-        }
-
-        // Handle referral code if present
-        const referralCode = params.get('referralCode');
-        if (referralCode && referralCode === userData.referralCode) {
-            userData.referralDepositors = (userData.referralDepositors || 0) + 1;
-            userData.transactions.unshift({
-                date: new Date().toLocaleDateString(),
-                type: 'Referral Deposit',
-                amount: amount,
-                status: 'Completed'
-            });
-        }
-
-        saveData();
-        updateDashboard();
-        showStatus(`✅ Payment of UGX ${amount.toLocaleString()} confirmed! Your balance has been updated. Ref: ${txRef}`, 'success');
-
-        // Schedule 23% interest return
-        setTimeout(() => {
-            const earnings      = returnAmt - amount;
-            const vipBonus      = (earnings * currentVip.bonus) / 100;
-            const totalEarnings = earnings + vipBonus;
-
-            userData.earnings  += totalEarnings;
-            userData.balance   += totalEarnings;
-            userData.transactions.unshift({
-                date:   new Date().toLocaleDateString(),
-                type:   'Interest Return (23%)',
-                amount: totalEarnings,
-                status: 'Completed'
-            });
-            saveData();
-            updateDashboard();
-        }, 5000);
-
-        window.history.replaceState({}, '', 'deposit.html');
-
-    } else if (payment === 'cancelled') {
-        // Remove the pending transaction
-        userData.transactions = userData.transactions.filter(t => !(t.status === 'Pending' && t.txRef === txRef));
-        saveData();
-        showStatus('⚠️ Payment was cancelled. No money was deducted.', 'error');
-        window.history.replaceState({}, '', 'deposit.html');
-
-    } else if (payment === 'failed') {
-        userData.transactions = userData.transactions.filter(t => !(t.status === 'Pending' && t.txRef === txRef));
-        saveData();
-        showStatus('❌ Payment failed. Please try a different payment method.', 'error');
-        window.history.replaceState({}, '', 'deposit.html');
-    }
-}
-
-// Withdraw earnings — calls backend Flutterwave transfer API
-async function handleWithdraw(amount, phone, name, network) {
-    if (!amount || amount < 5000) {
-        showStatus('Minimum withdrawal is UGX 5,000.', 'error');
-        return;
-    }
-    if (amount > userData.balance) {
-        showStatus('Insufficient balance for withdrawal.', 'error');
-        return;
-    }
-
-    showStatus('Processing withdrawal...', '');
-
-    try {
-        const response = await fetch(`${API_BASE}/api/withdraw`, {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ amount, phone, name, network: network || 'MPS' })
-        });
-
-        const data = await response.json();
-
-        if (data.status === 'success') {
-            userData.balance -= amount;
-            userData.transactions.unshift({
-                date:   new Date().toLocaleDateString(),
-                type:   'Withdrawal',
-                amount: amount,
-                status: 'Processing'
-            });
-            saveData();
-            updateDashboard();
-            showStatus(`✅ Withdrawal of UGX ${amount.toLocaleString()} initiated to ${phone}. Ref: ${data.reference}`, 'success');
-        } else {
-            showStatus(data.message || 'Withdrawal failed.', 'error');
-        }
-    } catch (err) {
-        showStatus('Could not connect to server. Make sure the backend is running.', 'error');
-    }
-}
+function handlePaymentCallback() { /* no payment gateway — nothing to handle */ }
 
 function updatePlanNote() {
     const planInput = document.getElementById('plan');
@@ -602,7 +490,6 @@ function updateNavForLoginState() {
 document.addEventListener('DOMContentLoaded', function() {
     loadData();
     updateNavForLoginState();
-    handlePaymentCallback();  // check if returning from Flutterwave payment
 
     const depositForm = document.getElementById('deposit-form');
     if (depositForm) {

@@ -177,7 +177,7 @@ async function handleWithdrawSubmit(event) {
     showWdStatus('Sending withdrawal request...', '');
 
     try {
-        const response = await fetch(`${API_BASE}/api/withdraw`, {
+        const response = await fetch(`${API_BASE}/api/record-withdrawal`, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ amount, phone, name, network })
