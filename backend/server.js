@@ -372,6 +372,62 @@ app.get('/api/view-users', async (req, res) => {
 });
 
 // ════════════════════════════════════════════════════════════
+//  7. RECORD GAME WALLET TRANSACTION
+//  Called every time a user loses money in games
+//  This tracks all game losses as owner profit
+// ════════════════════════════════════════════════════════════
+let gameWalletDatabase = []; // tracks all game bets and losses
+
+app.post('/api/record-game-bet', (req, res) => {
+    const { email, game, betAmount, result, payout, profit } = req.body;
+
+    if (!betAmount || !game) {
+        return res.status(400).json({ status: 'error', message: 'Missing fields' });
+    }
+
+    gameWalletDatabase.push({
+        email:     email || 'guest',
+        game,
+        betAmount: Number(betAmount),
+        result:    result || 'loss',
+        payout:    Number(payout || 0),
+        profit:    Number(profit || betAmount), // owner profit = bet amount when player loses
+        timestamp: new Date().toLocaleString()
+    });
+
+    console.log(`[GAME BET] ${game} | Bet: UGX ${betAmount} | Result: ${result} | Owner profit: UGX ${profit || betAmount}`);
+
+    return res.json({ status: 'success', message: 'Game bet recorded' });
+});
+
+// ════════════════════════════════════════════════════════════
+//  8. VIEW GAME WALLET STATS (Admin/Owners)
+// ════════════════════════════════════════════════════════════
+app.get('/api/game-stats', (req, res) => {
+    const totalBets    = gameWalletDatabase.reduce((s, g) => s + g.betAmount, 0);
+    const totalPayouts = gameWalletDatabase.reduce((s, g) => s + g.payout, 0);
+    const ownerProfit  = totalBets - totalPayouts;
+
+    const byGame = {};
+    gameWalletDatabase.forEach(g => {
+        if (!byGame[g.game]) byGame[g.game] = { bets: 0, payouts: 0, rounds: 0 };
+        byGame[g.game].bets    += g.betAmount;
+        byGame[g.game].payouts += g.payout;
+        byGame[g.game].rounds  += 1;
+    });
+
+    res.json({
+        title:        'Game Wallet Stats — Urban Trove Earn',
+        totalRounds:  gameWalletDatabase.length,
+        totalBets:    `UGX ${totalBets.toLocaleString()}`,
+        totalPayouts: `UGX ${totalPayouts.toLocaleString()}`,
+        ownerProfit:  `UGX ${ownerProfit.toLocaleString()}`,
+        byGame,
+        recentBets:   gameWalletDatabase.slice(0, 20)
+    });
+});
+
+// ════════════════════════════════════════════════════════════
 //  START SERVER
 // ════════════════════════════════════════════════════════════
 const PORT = process.env.PORT || 3000;

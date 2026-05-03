@@ -722,6 +722,22 @@
         window.scrollTo(0, 0);
     };
 
+    // ── Record game bet to backend API ──
+    function recordGameBet(game, betAmount, result, payout) {
+        const profit = betAmount - payout;
+        fetch('/api/record-game-bet', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: (typeof userData !== 'undefined' && userData.registeredUser) ? userData.registeredUser.email : 'guest',
+                game, betAmount, result,
+                payout: payout || 0,
+                profit: profit > 0 ? profit : 0
+            })
+        }).catch(() => {});
+    }
+    window.recordGameBet = recordGameBet;
+
     // Init wallet display on load
     document.addEventListener('DOMContentLoaded', () => {
         updateGameWalletDisplay();

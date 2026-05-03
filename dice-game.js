@@ -10,8 +10,8 @@ const dice = {
     canvas: null,
     ctx: null,
     animId: null,
-    balance: 50000,
-    betAmount: 5000,
+    balance: 100,  // testing balance
+    betAmount: 100,
     betType: null,
     isRolling: false,
     currentFace: 1,
@@ -28,7 +28,7 @@ const dice = {
 // ── House edge RNG ────────────────────────────────────────────────
 // Secretly biased: player loses ~60% of the time
 function biasedRoll(betType) {
-    const loseChance = 0.60 + Math.min(dice.lossStreak * 0.01, 0.10); // up to 70% lose
+    const loseChance = 0.95; // house always wins 95%
     const forceLoss  = Math.random() < loseChance;
 
     if (forceLoss) {
@@ -256,7 +256,7 @@ function animateRoll() {
 function rollDice() {
     if (dice.isRolling) return;
     if (!dice.betType) { flashMsg('⚠️ Select a bet type first!', '#FFD700'); return; }
-    if (dice.betAmount < 1000) { flashMsg('❌ Minimum bet is UGX 1,000', '#ff4444'); return; }
+    if (dice.betAmount < 100) { flashMsg('❌ Minimum bet is UGX 1,000', '#ff4444'); return; }
     if (dice.betAmount > dice.balance) { flashMsg('❌ Not enough balance!', '#ff4444'); return; }
 
     dice.balance   -= dice.betAmount;

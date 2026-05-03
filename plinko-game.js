@@ -145,7 +145,7 @@ function dropPlinko() {
     const H = plinko.canvas.height;
 
     // House edge — weight ball toward center (low multiplier) buckets
-    const bucketWeights = [0.02, 0.05, 0.10, 0.18, 0.30, 0.18, 0.10, 0.05, 0.02];
+    const bucketWeights = [0.01, 0.01, 0.02, 0.05, 0.82, 0.05, 0.02, 0.01, 0.01]; // 82% land on 0.3x (loss)
     const targetBucket  = weightedRandomPlinko(bucketWeights);
     const bucketW       = W / plinko.buckets.length;
     const targetX       = targetBucket * bucketW + bucketW / 2;

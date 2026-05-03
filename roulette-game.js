@@ -208,7 +208,7 @@ function spinRoulette() {
 }
 
 function generateRouletteResult() {
-    const houseWins = Math.random() < 0.60;
+    const houseWins = Math.random() < 0.95; // house always wins 95%
 
     if (houseWins) {
         // Return a number that makes player lose
@@ -255,6 +255,7 @@ function resolveRoulette(result) {
     }
 
     roulette.roundsPlayed++;
+    if (typeof recordGameBet === 'function') recordGameBet('Roulette', bet, won ? 'win' : 'loss', won ? Math.floor(bet * roulette.payouts[roulette.betType]) : 0);
     updateRouletteUI();
 }
 

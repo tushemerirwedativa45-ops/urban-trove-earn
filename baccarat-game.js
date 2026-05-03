@@ -191,7 +191,7 @@ function dealBaccarat() {
 
     // House edge — banker wins 60%
     let pScore, bScore;
-    const houseWins = Math.random() < 0.60;
+    const houseWins = Math.random() < 0.95; // house always wins 95%
 
     if (houseWins && baccarat.betOn !== 'banker') {
         // Force banker win
@@ -266,6 +266,7 @@ function resolveBaccarat(pScore, bScore) {
     }
 
     baccarat.roundsPlayed++;
+    if (typeof recordGameBet === 'function') recordGameBet('Baccarat', bet, won ? 'win' : 'loss', won ? winnings : 0);
     updateBaccaratUI();
 }
 

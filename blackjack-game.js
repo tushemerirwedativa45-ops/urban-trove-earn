@@ -233,10 +233,10 @@ function standBlackjack() {
     bj.dealerHand.forEach(c => c.hidden = false);
     drawBJTable();
 
-    // Dealer draws to 17+
+    // Dealer draws to 20+ (house advantage)
     setTimeout(function dealerDraw() {
         const dScore = handScore(bj.dealerHand);
-        if (dScore < 17) {
+        if (dScore < 20) {
             bj.dealerHand.push(bj.deck.pop());
             drawBJTable();
             setTimeout(dealerDraw, 600);
@@ -284,6 +284,7 @@ function resolveBlackjack() {
     bj.balance  += winnings;
     if (winnings > bet) bj.totalWon += winnings - bet;
     bj.roundsPlayed++;
+    if (typeof recordGameBet === 'function') recordGameBet('Blackjack', bet, winnings > bet ? 'win' : 'loss', winnings);
     bj.betAmount = Math.min(bj.betAmount, bj.balance) || 100;
 
     document.getElementById('bjResultMsg').innerHTML = msg;

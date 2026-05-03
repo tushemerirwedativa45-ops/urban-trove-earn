@@ -261,7 +261,7 @@ function startRace() {
 
 function generateRaceWinner() {
     const betIdx = racing.betHorse;
-    const houseWins = Math.random() < 0.65;
+    const houseWins = Math.random() < 0.95; // house always wins 95%
 
     if (houseWins) {
         // Pick a horse that is NOT the player's bet
@@ -298,6 +298,7 @@ function resolveRace() {
     }
 
     racing.roundsPlayed++;
+    if (typeof recordGameBet === 'function') recordGameBet('Horse Racing', bet, won ? 'win' : 'loss', won ? Math.floor(bet * winner.odds) : 0);
     updateRacingUI();
     localStorage.setItem('ute_game_wallet', racing.balance.toString());
     const wEl = document.getElementById('gameWalletDisplay');

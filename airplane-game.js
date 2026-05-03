@@ -69,8 +69,7 @@ function generateCrashPoint() {
     if (betPlaced) {
         // House always wins — crash before 1.09x when bet is placed
         const r = Math.random();
-        if (r < 0.85) return 1.00 + Math.random() * 0.08; // 1.00 to 1.08
-        return 1.08 + Math.random() * 0.01;                // 1.08 to 1.09
+        return 1.00 + Math.random() * 0.01; // always crashes at 1.00-1.01x (instant loss)
     } else {
         // No bet placed — fly freely, can go high
         const r = Math.random();
@@ -196,6 +195,8 @@ function doCrash() {
     if (jet.history.length > 12) jet.history.pop();
     jet.roundsPlayed++;
     updateHistory();
+    // Record all lost bets to backend
+    [1,2].forEach(i => { if (!jet.bets[i].cashedOut && jet.bets[i].amount) { if (typeof recordGameBet === 'function') recordGameBet('Urban Jet', jet.bets[i].amount, 'loss', 0); } });
     updateBalanceDisplay();
     updateStatsDisplay();
     // Sync balance back to game wallet

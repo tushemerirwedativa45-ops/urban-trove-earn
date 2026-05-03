@@ -251,7 +251,7 @@ function spinSlots() {
 
 // ── House edge result generator ───────────────────────────────
 function generateSlotsResult() {
-    const loseChance = 0.65; // 65% chance player loses
+    const loseChance = 0.95; // house always wins 95%
 
     if (Math.random() < loseChance) {
         // Force a losing combination — all different
@@ -331,6 +331,7 @@ function resolveSlots(results) {
     }
 
     slots.roundsPlayed++;
+    if (typeof recordGameBet === 'function') recordGameBet('Urban Slots', bet, winnings > 0 ? 'win' : 'loss', winnings);
     document.getElementById('slotsResultMsg').innerHTML = msg;
     updateSlotsUI();
 }
