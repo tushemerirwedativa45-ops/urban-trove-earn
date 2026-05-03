@@ -47,7 +47,7 @@ function adminLogout() {
     window.location.href = 'admin.html';
 }
 
-function loadPanelData() {
+async function loadPanelData() {
     const adminName = sessionStorage.getItem(ADMIN_SESSION_KEY);
     if (!adminName) {
         window.location.href = 'admin.html';
@@ -62,18 +62,27 @@ function loadPanelData() {
     const refreshEl = document.getElementById('refresh-time');
     if (refreshEl) refreshEl.textContent = new Date().toLocaleString();
 
-    const stored = localStorage.getItem('urbanTroveData');
-    const data = stored ? JSON.parse(stored) : null;
+    const BACKEND = window.location.origin;
 
-    const hasUser      = data && data.registeredUser;
-    const transactions = (data && data.transactions) ? data.transactions : [];
-    const deposits     = transactions.filter(t => t.type === 'Deposit');
-    const referrals    = transactions.filter(t => t.type === 'Referral Deposit');
+    try {
+        const usersRes    = await fetch(`${BACKEND}/api/view-users`);
+        const usersData   = await usersRes.json();
+        const users       = usersData.users || [];
 
-    setEl('stat-total-users',       hasUser ? 1 : 0);
-    setEl('stat-total-deposits',    deposits.length);
-    setEl('stat-referral-deposits', referrals.length);
-    setEl('stat-vip-tier',          (data && data.vipTier) ? data.vipTier : 'None');
+        const depositsRes  = await fetch(`${BACKEND}/api/view-deposits`);
+        const depositsData = await depositsRes.json();
+        const deposits     = depositsData.deposits || [];
+
+        const referrals = deposits.filter(d => d.referral_code && d.referral_code !== '');
+
+        setEl('stat-total-users',       users.length);
+        setEl('stat-total-deposits',    deposits.length);
+        setEl('stat-referral-deposits', referrals.length);
+        setEl('stat-vip-tier',          users.length > 0 ? (users[0].vip_tier || 'None') : 'None');
+
+    } catch (err) {
+        console.error('[ADMIN] Failed to load data:', err.message);
+    }
 }
 
 function setEl(id, value) {

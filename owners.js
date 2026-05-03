@@ -84,90 +84,102 @@ function escHtml(str) {
         .replace(/"/g, '&quot;');
 }
 
-// ── Load overview & transactions data ────────────────────────────
-function loadData(ownerKey) {
-    const stored = localStorage.getItem('urbanTroveData');
-    const data   = stored ? JSON.parse(stored) : null;
+// ── Load overview & transactions data from DATABASE ─────────────
+async function loadData(ownerKey) {
+    const BACKEND = window.location.origin;
 
-    const transactions  = (data && data.transactions) ? data.transactions : [];
-    const deposits      = transactions.filter(t => t.type === 'Deposit');
-    const referrals     = transactions.filter(t => t.type === 'Referral Deposit');
-    const interestTxns  = transactions.filter(t => t.type === 'Interest Return');
-    const totalDeposited = deposits.reduce((s, t) => s + (t.amount || 0), 0);
-    const totalEarnings  = interestTxns.reduce((s, t) => s + (t.amount || 0), 0);
-    const hasUser        = data && data.registeredUser;
+    try {
+        // Fetch users from database
+        const usersRes = await fetch(`${BACKEND}/api/view-users`);
+        const usersData = await usersRes.json();
+        const users = usersData.users || [];
 
-    // Overview stats
-    setEl('ov-users',    hasUser ? 1 : 0);
-    setEl('ov-deposits', deposits.length);
-    setEl('ov-amount',   'UGX ' + totalDeposited.toLocaleString());
-    setEl('ov-earnings', 'UGX ' + totalEarnings.toLocaleString());
-    setEl('ov-referrals', referrals.length);
-    setEl('ov-vip',      (data && data.vipTier) ? data.vipTier : 'None');
+        // Fetch deposits from database
+        const depositsRes = await fetch(`${BACKEND}/api/view-deposits`);
+        const depositsData = await depositsRes.json();
+        const deposits = depositsData.deposits || [];
 
-    // User table
-    const userTableEl = document.getElementById('ov-user-table');
-    if (userTableEl) {
-        if (!hasUser) {
-            userTableEl.innerHTML = '<div class="empty-state">No user registered yet.</div>';
-        } else {
-            const u = data.registeredUser;
-            userTableEl.innerHTML = `
-                <table class="txn-table">
-                    <thead>
-                        <tr>
-                            <th>#</th><th>Username</th><th>Last Name</th><th>Email</th>
-                            <th>Country</th><th>Registered At</th><th>Deposited</th>
-                            <th>VIP</th><th>Referrals</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td>${escHtml(u.username)}</td>
-                            <td>${escHtml(u.lastname)}</td>
-                            <td>${escHtml(u.email)}</td>
-                            <td>${escHtml(u.country)}</td>
-                            <td>${escHtml(u.registeredAt)}</td>
-                            <td><span class="badge ${deposits.length > 0 ? 'completed' : 'pending'}">${deposits.length > 0 ? 'Yes' : 'No'}</span></td>
-                            <td>${escHtml(data.vipTier || 'None')}</td>
-                            <td>${data.referralDeposits || 0}</td>
-                        </tr>
-                    </tbody>
-                </table>`;
+        // Fetch withdrawals from database
+        const withdrawRes = await fetch(`${BACKEND}/api/view-withdrawals`);
+        const withdrawData = await withdrawRes.json();
+        const withdrawals = withdrawData.withdrawals || [];
+
+        const totalDeposited = deposits.reduce((s, d) => s + Number(d.amount || 0), 0);
+        const totalWithdrawn = withdrawals.reduce((s, w) => s + Number(w.amount || 0), 0);
+
+        // Overview stats
+        setEl('ov-users',    users.length);
+        setEl('ov-deposits', deposits.length);
+        setEl('ov-amount',   'UGX ' + totalDeposited.toLocaleString());
+        setEl('ov-earnings', 'UGX ' + totalWithdrawn.toLocaleString());
+        setEl('ov-referrals', deposits.filter(d => d.referral_code).length);
+        setEl('ov-vip', '—');
+
+        // Users table
+        const userTableEl = document.getElementById('ov-user-table');
+        if (userTableEl) {
+            if (users.length === 0) {
+                userTableEl.innerHTML = '<div class="empty-state">No users registered yet.</div>';
+            } else {
+                const rows = users.map((u, i) => `
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td>${escHtml(u.username)}</td>
+                        <td>${escHtml(u.lastname)}</td>
+                        <td>${escHtml(u.email)}</td>
+                        <td>${escHtml(u.country)}</td>
+                        <td>${escHtml(u.registered_at)}</td>
+                        <td><span class="badge ${deposits.find(d => d.email === u.email) ? 'completed' : 'pending'}">${deposits.find(d => d.email === u.email) ? 'Yes' : 'No'}</span></td>
+                        <td>${escHtml(u.vip_tier || 'None')}</td>
+                        <td>${u.referral_depositors || 0}</td>
+                    </tr>`).join('');
+                userTableEl.innerHTML = `
+                    <table class="txn-table">
+                        <thead>
+                            <tr><th>#</th><th>Username</th><th>Last Name</th><th>Email</th>
+                            <th>Country</th><th>Registered</th><th>Deposited</th><th>VIP</th><th>Referrals</th></tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>`;
+            }
         }
+
+        // Transactions table
+        const txnEl = document.getElementById('txn-container');
+        if (txnEl) {
+            if (deposits.length === 0) {
+                txnEl.innerHTML = '<div class="empty-state">No transactions recorded yet.</div>';
+            } else {
+                const rows = deposits.map((d, i) => `
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td>${escHtml(d.created_at)}</td>
+                        <td>Deposit</td>
+                        <td style="color:#c9a800;font-weight:bold;">UGX ${Number(d.amount).toLocaleString()}</td>
+                        <td><span class="badge completed">${escHtml(d.status)}</span></td>
+                    </tr>`).join('');
+                txnEl.innerHTML = `
+                    <table class="txn-table">
+                        <thead>
+                            <tr><th>#</th><th>Date</th><th>Type</th><th>Amount</th><th>Status</th></tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>`;
+            }
+        }
+
+    } catch (err) {
+        console.error('[OWNERS] Failed to load data:', err.message);
+        const userTableEl = document.getElementById('ov-user-table');
+        if (userTableEl) userTableEl.innerHTML = '<div class="empty-state">Could not load data from server.</div>';
     }
 
-    // All transactions
-    const txnEl = document.getElementById('txn-container');
-    if (txnEl) {
-        if (transactions.length === 0) {
-            txnEl.innerHTML = '<div class="empty-state">No transactions recorded yet.</div>';
-        } else {
-            const rows = transactions.map((t, i) => `
-                <tr>
-                    <td>${i + 1}</td>
-                    <td>${escHtml(t.date)}</td>
-                    <td>${escHtml(t.type)}</td>
-                    <td style="color:#c9a800;font-weight:bold;">UGX ${Number(t.amount).toLocaleString()}</td>
-                    <td><span class="badge ${t.status === 'Completed' ? 'completed' : 'recorded'}">${escHtml(t.status)}</span></td>
-                </tr>`).join('');
-            txnEl.innerHTML = `
-                <table class="txn-table">
-                    <thead>
-                        <tr><th>#</th><th>Date</th><th>Type</th><th>Amount</th><th>Status</th></tr>
-                    </thead>
-                    <tbody>${rows}</tbody>
-                </table>`;
-        }
-    }
-
-    // Highlight the logged-in owner's card
+    // Highlight the logged-in owner card
     document.querySelectorAll('.owner-card').forEach(c => c.classList.remove('you'));
     const myCard = document.getElementById('owner-card-' + ownerKey);
     if (myCard) myCard.classList.add('you');
 
-    // Mark logged-in owner as online in chat bar
+    // Mark logged-in owner as online
     document.querySelectorAll('.online-dot').forEach(d => d.classList.remove('active'));
     const myDot = document.getElementById('dot-' + ownerKey);
     if (myDot) myDot.classList.add('active');
