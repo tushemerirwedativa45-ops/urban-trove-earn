@@ -299,17 +299,20 @@ function _completeRegistration(username, lastname, email, country, password, ref
     userData.referralDepositors = 0;
     saveData();
 
-    showRegisterStatus('Registration successful! Share your referral link below to earn VIP status.', 'success');
+    showRegisterStatus('Registration successful! Redirecting to your dashboard...', 'success');
     document.getElementById('register-form').reset();
     updatePasswordRequirements('');
 
-    // Show referral link box
+    // Show referral link box briefly then redirect
     const box = document.getElementById('referral-link-box');
     const linkInput = document.getElementById('referral-link-display');
     if (box && linkInput) {
         linkInput.value = referralLink;
         box.style.display = 'block';
     }
+
+    // Redirect to dashboard after 2 seconds
+    setTimeout(() => { window.location.href = 'dashboard.html'; }, 2000);
 }
 
 function handleLogin(event) {
