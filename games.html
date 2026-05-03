@@ -38,48 +38,109 @@
 
         <!-- Game Selection -->
         <section class="game-selection" id="gameSelection">
+
+            <!-- Game Wallet Box -->
+            <div style="background:linear-gradient(135deg,#002a5c,#003d85);border-radius:12px;padding:22px;margin-bottom:25px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;">
+                <div>
+                    <div style="color:#aaa;font-size:0.85rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;">🎮 Game Wallet Balance</div>
+                    <div style="color:#FFD700;font-size:2rem;font-weight:bold;" id="gameWalletDisplay">UGX 0</div>
+                    <div style="color:#888;font-size:0.8rem;margin-top:4px;">Separate from your investment balance</div>
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <button onclick="showGameDeposit()" style="background:linear-gradient(135deg,#28a745,#20c997);color:white;border:none;padding:12px 22px;border-radius:8px;font-weight:bold;cursor:pointer;font-size:0.95rem;">💳 Add Funds</button>
+                    <button onclick="showGameWithdraw()" style="background:linear-gradient(135deg,#dc3545,#ff6b6b);color:white;border:none;padding:12px 22px;border-radius:8px;font-weight:bold;cursor:pointer;font-size:0.95rem;">💸 Withdraw</button>
+                </div>
+            </div>
+
+            <!-- Game Deposit Modal -->
+            <div id="gameDepositModal" style="display:none;background:rgba(0,42,92,0.97);border:2px solid #FFD700;border-radius:12px;padding:25px;margin-bottom:20px;">
+                <h3 style="color:#FFD700;margin-bottom:15px;">💳 Add Funds to Game Wallet</h3>
+                <p style="color:#aaa;font-size:0.88rem;margin-bottom:15px;">Enter the amount you want to add to your game wallet. This is separate from your investment balance.</p>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px;">
+                    <button onclick="quickAddFunds(5000)" style="background:rgba(255,215,0,0.15);border:1px solid #FFD700;color:#FFD700;padding:8px 16px;border-radius:6px;cursor:pointer;">+5,000</button>
+                    <button onclick="quickAddFunds(10000)" style="background:rgba(255,215,0,0.15);border:1px solid #FFD700;color:#FFD700;padding:8px 16px;border-radius:6px;cursor:pointer;">+10,000</button>
+                    <button onclick="quickAddFunds(20000)" style="background:rgba(255,215,0,0.15);border:1px solid #FFD700;color:#FFD700;padding:8px 16px;border-radius:6px;cursor:pointer;">+20,000</button>
+                    <button onclick="quickAddFunds(50000)" style="background:rgba(255,215,0,0.15);border:1px solid #FFD700;color:#FFD700;padding:8px 16px;border-radius:6px;cursor:pointer;">+50,000</button>
+                </div>
+                <div style="display:flex;gap:10px;align-items:center;">
+                    <input type="number" id="gameDepositAmount" placeholder="Enter amount (min UGX 1,000)" min="1000" style="flex:1;padding:11px;background:rgba(0,0,0,0.3);border:1px solid #FFD700;color:white;border-radius:7px;font-size:0.95rem;">
+                    <button onclick="addGameFunds()" style="background:linear-gradient(135deg,#FFD700,#ffed4e);color:#002a5c;border:none;padding:11px 22px;border-radius:7px;font-weight:bold;cursor:pointer;">ADD</button>
+                    <button onclick="hideGameDeposit()" style="background:rgba(220,53,69,0.3);border:1px solid #dc3545;color:#ff6b6b;padding:11px 16px;border-radius:7px;cursor:pointer;">✕</button>
+                </div>
+                <div id="gameDepositStatus" style="margin-top:10px;font-size:0.88rem;"></div>
+            </div>
+
+            <!-- Game Withdraw Modal -->
+            <div id="gameWithdrawModal" style="display:none;background:rgba(92,0,0,0.97);border:2px solid #dc3545;border-radius:12px;padding:25px;margin-bottom:20px;">
+                <h3 style="color:#ff6b6b;margin-bottom:15px;">💸 Withdraw from Game Wallet</h3>
+                <div style="display:flex;gap:10px;align-items:center;">
+                    <input type="number" id="gameWithdrawAmount" placeholder="Enter amount to withdraw" min="1000" style="flex:1;padding:11px;background:rgba(0,0,0,0.3);border:1px solid #dc3545;color:white;border-radius:7px;font-size:0.95rem;">
+                    <button onclick="withdrawGameFunds()" style="background:linear-gradient(135deg,#dc3545,#ff6b6b);color:white;border:none;padding:11px 22px;border-radius:7px;font-weight:bold;cursor:pointer;">WITHDRAW</button>
+                    <button onclick="hideGameWithdraw()" style="background:rgba(255,255,255,0.1);border:1px solid #aaa;color:#aaa;padding:11px 16px;border-radius:7px;cursor:pointer;">✕</button>
+                </div>
+                <div id="gameWithdrawStatus" style="margin-top:10px;font-size:0.88rem;"></div>
+            </div>
             <div class="games-grid">
                 <div class="game-card" id="airplaneGameCard" onclick="selectGame('airplane')">
                     <div class="game-icon">✈️</div>
                     <h3>Urban Jet</h3>
                     <p>Watch the jet fly and cash out before it crashes</p>
-                    <div class="game-stats-card">
-                        <span class="rtp">97% RTP</span>
-                        <span class="players">2.5K Playing</span>
-                    </div>
+                    <div class="game-stats-card"><span class="rtp">97% RTP</span><span class="players">2.5K Playing</span></div>
                     <button class="btn-play">PLAY NOW</button>
                 </div>
-
-                <div class="game-card" onclick="alert('More games coming soon!')">
+                <div class="game-card" onclick="selectDiceGame()">
+                    <div class="game-icon">🎲</div>
+                    <h3>Urban Dice</h3>
+                    <p>Predict Over or Under — win up to 4.8x your bet</p>
+                    <div class="game-stats-card"><span class="rtp">96% RTP</span><span class="players">1.2K Playing</span></div>
+                    <button class="btn-play">PLAY NOW</button>
+                </div>
+                <div class="game-card coming-soon-card">
+                    <div class="coming-soon-badge">COMING SOON</div>
                     <div class="game-icon">🎰</div>
                     <h3>Slot Machine</h3>
                     <p>Spin the reels and hit the jackpot</p>
-                    <div class="game-stats-card">
-                        <span class="rtp">95% RTP</span>
-                        <span class="players">Coming Soon</span>
-                    </div>
+                    <div class="game-stats-card"><span class="rtp">95% RTP</span><span class="players">Coming Soon</span></div>
                     <button class="btn-play" disabled>COMING SOON</button>
                 </div>
-
-                <div class="game-card" onclick="alert('More games coming soon!')">
-                    <div class="game-icon">🎲</div>
-                    <h3>Dice Game</h3>
-                    <p>Roll the dice and predict the outcome</p>
-                    <div class="game-stats-card">
-                        <span class="rtp">96% RTP</span>
-                        <span class="players">Coming Soon</span>
-                    </div>
+                <div class="game-card coming-soon-card">
+                    <div class="coming-soon-badge">COMING SOON</div>
+                    <div class="game-icon">🃏</div>
+                    <h3>Baccarat</h3>
+                    <p>Classic card game — Banker vs Player</p>
+                    <div class="game-stats-card"><span class="rtp">98% RTP</span><span class="players">Coming Soon</span></div>
                     <button class="btn-play" disabled>COMING SOON</button>
                 </div>
-
-                <div class="game-card" onclick="alert('More games coming soon!')">
+                <div class="game-card coming-soon-card">
+                    <div class="coming-soon-badge">COMING SOON</div>
                     <div class="game-icon">🎯</div>
-                    <h3>Lottery</h3>
-                    <p>Pick numbers and win big prizes</p>
-                    <div class="game-stats-card">
-                        <span class="rtp">94% RTP</span>
-                        <span class="players">Coming Soon</span>
-                    </div>
+                    <h3>Plinko</h3>
+                    <p>Drop the ball and watch it bounce to big wins</p>
+                    <div class="game-stats-card"><span class="rtp">97% RTP</span><span class="players">Coming Soon</span></div>
+                    <button class="btn-play" disabled>COMING SOON</button>
+                </div>
+                <div class="game-card coming-soon-card">
+                    <div class="coming-soon-badge">COMING SOON</div>
+                    <div class="game-icon">♠️</div>
+                    <h3>Blackjack</h3>
+                    <p>Beat the dealer to 21 and win big</p>
+                    <div class="game-stats-card"><span class="rtp">99% RTP</span><span class="players">Coming Soon</span></div>
+                    <button class="btn-play" disabled>COMING SOON</button>
+                </div>
+                <div class="game-card coming-soon-card">
+                    <div class="coming-soon-badge">COMING SOON</div>
+                    <div class="game-icon">🎡</div>
+                    <h3>Roulette</h3>
+                    <p>Spin the wheel — Red, Black or your lucky number</p>
+                    <div class="game-stats-card"><span class="rtp">97% RTP</span><span class="players">Coming Soon</span></div>
+                    <button class="btn-play" disabled>COMING SOON</button>
+                </div>
+                <div class="game-card coming-soon-card">
+                    <div class="coming-soon-badge">COMING SOON</div>
+                    <div class="game-icon">🐎</div>
+                    <h3>Horse Racing</h3>
+                    <p>Pick your horse and race to the finish line</p>
+                    <div class="game-stats-card"><span class="rtp">95% RTP</span><span class="players">Coming Soon</span></div>
                     <button class="btn-play" disabled>COMING SOON</button>
                 </div>
             </div>
@@ -191,6 +252,82 @@
                 </div>
             </div>
         </section>
+        <!-- Dice Game Section -->
+        <section id="diceGameSection" style="display:none;background:#0d0d1a;min-height:100vh;padding:20px;">
+            <div style="max-width:1100px;margin:0 auto;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+                    <button onclick="backFromDice()" style="background:rgba(255,255,255,0.1);border:1px solid #aaa;color:white;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:0.95rem;">← Back to Games</button>
+                    <div style="color:#FFD700;font-size:1.5rem;font-weight:bold;letter-spacing:2px;">🎲 URBAN DICE</div>
+                    <div style="background:rgba(0,0,0,0.4);border:1px solid #FFD700;border-radius:8px;padding:8px 18px;">
+                        <span style="color:#aaa;font-size:0.8rem;">WALLET: </span>
+                        <span style="color:#FFD700;font-weight:bold;" id="diceBalDisplay">UGX 0</span>
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+                    <!-- Canvas -->
+                    <div style="background:#0a0a1a;border:2px solid #1a1a3a;border-radius:12px;overflow:hidden;">
+                        <canvas id="diceCanvas" width="500" height="380" style="width:100%;height:auto;"></canvas>
+                    </div>
+
+                    <!-- Controls -->
+                    <div style="display:flex;flex-direction:column;gap:15px;">
+                        <!-- Bet type -->
+                        <div style="background:rgba(0,0,0,0.4);border:1px solid #1a1a3a;border-radius:10px;padding:18px;">
+                            <div style="color:#FFD700;font-size:0.85rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">Choose Your Bet</div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+                                <button id="dbOver" class="dice-bet-btn" onclick="selectDiceBet('over')" style="padding:12px;border-radius:8px;border:2px solid #1a1a3a;background:rgba(0,0,0,0.3);color:#aaa;cursor:pointer;font-weight:bold;transition:all 0.3s;">OVER 3 <br><small style="color:#28a745;">1.8x</small></button>
+                                <button id="dbUnder" class="dice-bet-btn" onclick="selectDiceBet('under')" style="padding:12px;border-radius:8px;border:2px solid #1a1a3a;background:rgba(0,0,0,0.3);color:#aaa;cursor:pointer;font-weight:bold;transition:all 0.3s;">UNDER 4 <br><small style="color:#28a745;">1.8x</small></button>
+                            </div>
+                            <div style="color:#888;font-size:0.8rem;margin-bottom:8px;">Or pick exact number (4.8x):</div>
+                            <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;">
+                                <button id="db1" class="dice-bet-btn" onclick="selectDiceBet(1)" style="padding:10px 5px;border-radius:6px;border:2px solid #1a1a3a;background:rgba(0,0,0,0.3);color:#aaa;cursor:pointer;font-weight:bold;">1</button>
+                                <button id="db2" class="dice-bet-btn" onclick="selectDiceBet(2)" style="padding:10px 5px;border-radius:6px;border:2px solid #1a1a3a;background:rgba(0,0,0,0.3);color:#aaa;cursor:pointer;font-weight:bold;">2</button>
+                                <button id="db3" class="dice-bet-btn" onclick="selectDiceBet(3)" style="padding:10px 5px;border-radius:6px;border:2px solid #1a1a3a;background:rgba(0,0,0,0.3);color:#aaa;cursor:pointer;font-weight:bold;">3</button>
+                                <button id="db4" class="dice-bet-btn" onclick="selectDiceBet(4)" style="padding:10px 5px;border-radius:6px;border:2px solid #1a1a3a;background:rgba(0,0,0,0.3);color:#aaa;cursor:pointer;font-weight:bold;">4</button>
+                                <button id="db5" class="dice-bet-btn" onclick="selectDiceBet(5)" style="padding:10px 5px;border-radius:6px;border:2px solid #1a1a3a;background:rgba(0,0,0,0.3);color:#aaa;cursor:pointer;font-weight:bold;">5</button>
+                                <button id="db6" class="dice-bet-btn" onclick="selectDiceBet(6)" style="padding:10px 5px;border-radius:6px;border:2px solid #1a1a3a;background:rgba(0,0,0,0.3);color:#aaa;cursor:pointer;font-weight:bold;">6</button>
+                            </div>
+                            <div id="diceMultiPreview" style="color:#28a745;font-size:0.85rem;margin-top:10px;text-align:center;">Select a bet type above</div>
+                        </div>
+
+                        <!-- Bet amount -->
+                        <div style="background:rgba(0,0,0,0.4);border:1px solid #1a1a3a;border-radius:10px;padding:18px;">
+                            <div style="color:#FFD700;font-size:0.85rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">Bet Amount</div>
+                            <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+                                <button onclick="decreaseDiceBet()" style="background:#dc3545;color:white;border:none;width:38px;height:38px;border-radius:6px;font-size:1.2rem;cursor:pointer;">-</button>
+                                <div style="flex:1;background:rgba(0,0,0,0.4);border:1px solid #FFD700;border-radius:6px;padding:10px;text-align:center;color:#FFD700;font-weight:bold;" id="diceBetDisplay">UGX 5,000</div>
+                                <button onclick="increaseDiceBet()" style="background:#28a745;color:white;border:none;width:38px;height:38px;border-radius:6px;font-size:1.2rem;cursor:pointer;">+</button>
+                            </div>
+                            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+                                <button onclick="halfDiceBet()" style="background:rgba(255,255,255,0.08);border:1px solid #333;color:#aaa;padding:7px;border-radius:6px;cursor:pointer;font-size:0.8rem;">1/2</button>
+                                <button onclick="doubleDiceBet()" style="background:rgba(255,255,255,0.08);border:1px solid #333;color:#aaa;padding:7px;border-radius:6px;cursor:pointer;font-size:0.8rem;">x2</button>
+                                <button onclick="maxDiceBet()" style="background:rgba(255,255,255,0.08);border:1px solid #333;color:#aaa;padding:7px;border-radius:6px;cursor:pointer;font-size:0.8rem;">MAX</button>
+                            </div>
+                        </div>
+
+                        <!-- Roll button -->
+                        <button id="diceRollBtn" onclick="rollDice()" style="background:linear-gradient(135deg,#FFD700,#ffed4e);color:#002a5c;border:none;padding:16px;border-radius:10px;font-size:1.2rem;font-weight:bold;cursor:pointer;letter-spacing:2px;transition:all 0.3s;">🎲 ROLL DICE</button>
+
+                        <!-- Result -->
+                        <div id="diceResultMsg" style="min-height:70px;"></div>
+
+                        <!-- Stats -->
+                        <div style="background:rgba(0,0,0,0.3);border:1px solid #1a1a3a;border-radius:8px;padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                            <div style="text-align:center;"><div style="color:#888;font-size:0.75rem;">ROUNDS</div><div style="color:#FFD700;font-weight:bold;" id="diceRoundsDisp">0</div></div>
+                            <div style="text-align:center;"><div style="color:#888;font-size:0.75rem;">TOTAL WON</div><div style="color:#28a745;font-weight:bold;" id="diceTotalWonDisp">UGX 0</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History -->
+                <div style="margin-top:15px;background:rgba(0,0,0,0.3);border:1px solid #1a1a3a;border-radius:10px;padding:15px;">
+                    <div style="color:#888;font-size:0.8rem;margin-bottom:10px;">RECENT ROLLS:</div>
+                    <div id="diceHistoryBar" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <footer>
@@ -199,5 +336,110 @@
 
     <script src="script.js"></script>
     <script src="airplane-game.js"></script>
+    <script src="dice-game.js"></script>
+    <script>
+    // ── Game Wallet (separate from investment balance) ──
+    const GAME_WALLET_KEY = 'ute_game_wallet';
+
+    function getGameWallet() {
+        return parseFloat(localStorage.getItem(GAME_WALLET_KEY) || '0');
+    }
+
+    function setGameWallet(amount) {
+        localStorage.setItem(GAME_WALLET_KEY, amount.toString());
+        updateGameWalletDisplay();
+        // Sync to jet balance
+        if (typeof jet !== 'undefined') {
+            jet.balance = amount;
+            updateBalanceDisplay();
+        }
+    }
+
+    function updateGameWalletDisplay() {
+        const el = document.getElementById('gameWalletDisplay');
+        if (el) el.textContent = 'UGX ' + getGameWallet().toLocaleString();
+    }
+
+    function showGameDeposit() {
+        document.getElementById('gameDepositModal').style.display = 'block';
+        document.getElementById('gameWithdrawModal').style.display = 'none';
+    }
+
+    function hideGameDeposit() {
+        document.getElementById('gameDepositModal').style.display = 'none';
+    }
+
+    function showGameWithdraw() {
+        document.getElementById('gameWithdrawModal').style.display = 'block';
+        document.getElementById('gameDepositModal').style.display = 'none';
+    }
+
+    function hideGameWithdraw() {
+        document.getElementById('gameWithdrawModal').style.display = 'none';
+    }
+
+    function quickAddFunds(amount) {
+        document.getElementById('gameDepositAmount').value = amount;
+    }
+
+    function addGameFunds() {
+        const amount = parseFloat(document.getElementById('gameDepositAmount').value);
+        const status = document.getElementById('gameDepositStatus');
+        if (!amount || amount < 1000) {
+            status.innerHTML = '<span style="color:#ff4444">❌ Minimum deposit is UGX 1,000</span>';
+            return;
+        }
+        const newBal = getGameWallet() + amount;
+        setGameWallet(newBal);
+        status.innerHTML = `<span style="color:#28a745">✅ UGX ${amount.toLocaleString()} added! Game wallet: UGX ${newBal.toLocaleString()}</span>`;
+        document.getElementById('gameDepositAmount').value = '';
+        setTimeout(hideGameDeposit, 1500);
+    }
+
+    function withdrawGameFunds() {
+        const amount = parseFloat(document.getElementById('gameWithdrawAmount').value);
+        const status = document.getElementById('gameWithdrawStatus');
+        const bal    = getGameWallet();
+        if (!amount || amount < 1000) {
+            status.innerHTML = '<span style="color:#ff4444">❌ Minimum withdrawal is UGX 1,000</span>';
+            return;
+        }
+        if (amount > bal) {
+            status.innerHTML = `<span style="color:#ff4444">❌ Insufficient game wallet balance (UGX ${bal.toLocaleString()})</span>`;
+            return;
+        }
+        setGameWallet(bal - amount);
+        status.innerHTML = `<span style="color:#28a745">✅ UGX ${amount.toLocaleString()} withdrawn from game wallet</span>`;
+        document.getElementById('gameWithdrawAmount').value = '';
+        setTimeout(hideGameWithdraw, 1500);
+    }
+
+    function selectDiceGame() {
+        document.getElementById('gameSelection').style.display = 'none';
+        document.getElementById('diceGameSection').style.display = 'block';
+        // Pass game wallet balance to dice game
+        dice.balance = getGameWallet();
+        initDiceGame();
+        window.scrollTo(0, 0);
+    }
+
+    // Override backFromDice to sync wallet
+    const _origBackFromDice = window.backFromDice;
+    window.backFromDice = function() {
+        setGameWallet(dice.balance);
+        document.getElementById('diceGameSection').style.display = 'none';
+        document.getElementById('gameSelection').style.display = 'block';
+        cancelAnimationFrame(dice.animId);
+        updateGameWalletDisplay();
+        window.scrollTo(0, 0);
+    };
+
+    // Init wallet display on load
+    document.addEventListener('DOMContentLoaded', () => {
+        updateGameWalletDisplay();
+        // Set jet balance to game wallet
+        if (typeof jet !== 'undefined') jet.balance = getGameWallet();
+    });
+    </script>
 </body>
 </html>

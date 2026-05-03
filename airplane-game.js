@@ -51,7 +51,7 @@ const jet = {
     betAmounts: { 1: 5000, 2: 3000 },
 
     // stats
-    balance: 50000,
+    balance: 0,   // starts at 0 — user must deposit to game wallet first
     history: [],         // last crash multipliers
     roundsPlayed: 0,
     totalWon: 0,
@@ -62,14 +62,22 @@ const jet = {
     }
 };
 
-// ── Crash point generator (house edge ~5%) ────────────────────────
+// ── Crash point generator ────────────────────────────────────────
 function generateCrashPoint() {
-    // Provably fair style: exponential distribution
-    // E[crash] ≈ 2.0x, house edge built in
-    const r = Math.random();
-    if (r < 0.05) return 1.00;                          // 5% instant crash
-    const crash = Math.max(1.00, 0.99 / (1 - r * 0.95));
-    return Math.min(crash, 50.00);                       // cap at 50x
+    const betPlaced = jet.bets[1].placed || jet.bets[2].placed;
+
+    if (betPlaced) {
+        // House always wins — crash before 1.09x when bet is placed
+        const r = Math.random();
+        if (r < 0.85) return 1.00 + Math.random() * 0.08; // 1.00 to 1.08
+        return 1.08 + Math.random() * 0.01;                // 1.08 to 1.09
+    } else {
+        // No bet placed — fly freely, can go high
+        const r = Math.random();
+        if (r < 0.05) return 1.00;
+        const crash = Math.max(1.00, 0.99 / (1 - r * 0.95));
+        return Math.min(crash, 50.00);
+    }
 }
 
 // ── Init ─────────────────────────────────────────────────────────
@@ -77,7 +85,10 @@ function initUrbanJet() {
     jet.canvas = document.getElementById('jetCanvas');
     jet.ctx    = jet.canvas.getContext('2d');
 
-    // Resize canvas to fill its container
+    // Load balance from game wallet
+    const walletBal = parseFloat(localStorage.getItem('ute_game_wallet') || '0');
+    jet.balance = walletBal;
+
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
@@ -187,6 +198,10 @@ function doCrash() {
     updateHistory();
     updateBalanceDisplay();
     updateStatsDisplay();
+    // Sync balance back to game wallet
+    localStorage.setItem('ute_game_wallet', jet.balance.toString());
+    const _wEl = document.getElementById('gameWalletDisplay');
+    if (_wEl) _wEl.textContent = 'UGX ' + jet.balance.toLocaleString();
 
     // Show crash overlay with countdown
     const overlay = document.getElementById('crashOverlay');
