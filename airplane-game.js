@@ -48,10 +48,10 @@ const jet = {
         1: { amount: 0, placed: false, cashedOut: false },
         2: { amount: 0, placed: false, cashedOut: false }
     },
-    betAmounts: { 1: 5000, 2: 3000 },
+    betAmounts: { 1: 100, 2: 100 },
 
     // stats
-    balance: 0,   // starts at 0 — user must deposit to game wallet first
+    balance: 100,  // testing balance
     history: [],         // last crash multipliers
     roundsPlayed: 0,
     totalWon: 0,
@@ -166,11 +166,11 @@ function startFlyingPhase() {
     jet.startTime = Date.now();
     jet.pathPoints = [];
 
-    // Lock in bets — disable place-bet buttons
+    // Show cashout for already placed bets — keep bet buttons enabled for new bets
     for (let i = 1; i <= 2; i++) {
-        const btn = document.getElementById(`placeBetBtn${i}`);
-        btn.disabled = true;
         if (jet.bets[i].placed) {
+            const btn = document.getElementById(`placeBetBtn${i}`);
+            btn.disabled = true;
             document.getElementById(`cashoutSection${i}`).style.display = 'flex';
             document.getElementById(`betResult${i}`).innerHTML = '';
         }
@@ -559,24 +559,30 @@ function updateOddsDisplay() {
 
 // ── Bet controls ──────────────────────────────────────────────────
 function increaseBet(slot) {
-    if (jet.phase !== 'waiting' || jet.bets[slot].placed) return;
-    jet.betAmounts[slot] = Math.min(jet.betAmounts[slot] + 1000, jet.balance);
+    if (jet.bets[slot].placed) return;
+    jet.betAmounts[slot] = Math.min(jet.betAmounts[slot] + 100, jet.balance);
     updateBetDisplays();
 }
 
 function decreaseBet(slot) {
-    if (jet.phase !== 'waiting' || jet.bets[slot].placed) return;
-    jet.betAmounts[slot] = Math.max(jet.betAmounts[slot] - 1000, 1000);
+    if (jet.bets[slot].placed) return;
+    jet.betAmounts[slot] = Math.max(jet.betAmounts[slot] - 100, 100);
     updateBetDisplays();
 }
 
 function placeBet(slot) {
-    if (jet.phase !== 'waiting') {
-        showBetMsg(slot, '⏳ Wait for next round', '#FFD700');
+    // Allow betting during waiting AND flying phases
+    if (jet.phase === 'crashed') {
+        showBetMsg(slot, '⏳ Wait for next round to start', '#FFD700');
         return;
     }
     if (jet.bets[slot].placed) return;
+
     const amount = jet.betAmounts[slot];
+    if (!amount || amount < 100) {
+        showBetMsg(slot, '❌ Minimum bet is UGX 100', '#ff4444');
+        return;
+    }
     if (amount > jet.balance) {
         showBetMsg(slot, '❌ Insufficient balance', '#ff4444');
         return;
@@ -592,7 +598,15 @@ function placeBet(slot) {
 
     document.getElementById(`betPlaceholder${slot}`).classList.add('active');
     updateBalanceDisplay();
-    showBetMsg(slot, `✅ Bet placed: UGX ${amount.toLocaleString()}`, '#28a745');
+
+    // Show BET ACCEPTED message
+    showBetMsg(slot, `✅ BET ACCEPTED — UGX ${amount.toLocaleString()}`, '#28a745');
+
+    // If plane is already flying, show cashout button immediately
+    if (jet.phase === 'flying') {
+        document.getElementById(`cashoutSection${slot}`).style.display = 'flex';
+        document.getElementById(`cashoutMultiplier${slot}`).textContent = jet.multiplier.toFixed(2) + 'x';
+    }
 }
 
 function cashoutBet(slot) {
