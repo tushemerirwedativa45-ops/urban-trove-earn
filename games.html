@@ -109,13 +109,12 @@
                     <div class="game-stats-card"><span class="rtp">98% RTP</span><span class="players">980 Playing</span></div>
                     <button class="btn-play">PLAY NOW</button>
                 </div>
-                <div class="game-card coming-soon-card">
-                    <div class="coming-soon-badge">COMING SOON</div>
+                <div class="game-card" onclick="selectPlinkoGame()">
                     <div class="game-icon">🎯</div>
                     <h3>Plinko</h3>
                     <p>Drop the ball and watch it bounce to big wins</p>
-                    <div class="game-stats-card"><span class="rtp">97% RTP</span><span class="players">Coming Soon</span></div>
-                    <button class="btn-play" disabled>COMING SOON</button>
+                    <div class="game-stats-card"><span class="rtp">97% RTP</span><span class="players">750 Playing</span></div>
+                    <button class="btn-play">PLAY NOW</button>
                 </div>
                 <div class="game-card coming-soon-card">
                     <div class="coming-soon-badge">COMING SOON</div>
@@ -446,6 +445,44 @@
             </div>
         </section>
 
+
+        <!-- Plinko Game Section -->
+        <section id="plinkoGameSection" style="display:none;background:#0a0a2a;min-height:100vh;padding:20px;">
+            <div style="max-width:800px;margin:0 auto;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+                    <button onclick="backFromPlinko()" style="background:rgba(255,255,255,0.1);border:1px solid #aaa;color:white;padding:10px 20px;border-radius:8px;cursor:pointer;">← Back</button>
+                    <div style="color:#FFD700;font-size:1.5rem;font-weight:bold;letter-spacing:2px;">🎯 PLINKO</div>
+                    <div style="background:rgba(0,0,0,0.4);border:1px solid #FFD700;border-radius:8px;padding:8px 18px;">
+                        <span style="color:#aaa;font-size:0.8rem;">WALLET: </span>
+                        <span style="color:#FFD700;font-weight:bold;" id="plinkoBalDisplay">UGX 0</span>
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 260px;gap:20px;">
+                    <div style="background:#080818;border:2px solid rgba(255,215,0,0.3);border-radius:12px;overflow:hidden;">
+                        <canvas id="plinkoCanvas" width="500" height="500" style="width:100%;height:auto;"></canvas>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:12px;">
+                        <div style="background:rgba(0,0,0,0.4);border:1px solid #1a1a3a;border-radius:10px;padding:15px;">
+                            <div style="color:#FFD700;font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Bet Amount</div>
+                            <div style="background:rgba(0,0,0,0.4);border:1px solid #FFD700;border-radius:6px;padding:10px;text-align:center;color:#FFD700;font-weight:bold;font-size:1.1rem;margin-bottom:8px;" id="plinkoBetDisplay">UGX 100</div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                                <button onclick="increasePlinkoBet()" style="background:rgba(40,167,69,0.2);border:1px solid #28a745;color:#28a745;padding:7px;border-radius:6px;cursor:pointer;font-weight:bold;">+100</button>
+                                <button onclick="halfPlinkoBet()" style="background:rgba(255,255,255,0.08);border:1px solid #333;color:#aaa;padding:7px;border-radius:6px;cursor:pointer;">1/2</button>
+                                <button onclick="doublePlinkoBet()" style="background:rgba(255,255,255,0.08);border:1px solid #333;color:#aaa;padding:7px;border-radius:6px;cursor:pointer;">x2</button>
+                                <button onclick="maxPlinkoBet()" style="background:rgba(220,53,69,0.2);border:1px solid #dc3545;color:#ff6b6b;padding:7px;border-radius:6px;cursor:pointer;">MAX</button>
+                            </div>
+                        </div>
+                        <button id="plinkoDropBtn" onclick="dropPlinko()" style="background:linear-gradient(135deg,#FFD700,#ffed4e);color:#002a5c;border:none;padding:16px;border-radius:10px;font-size:1.2rem;font-weight:bold;cursor:pointer;letter-spacing:2px;">🎯 DROP BALL</button>
+                        <div id="plinkoResultMsg" style="min-height:70px;"></div>
+                        <div style="background:rgba(0,0,0,0.3);border:1px solid #1a1a3a;border-radius:8px;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center;">
+                            <div><div style="color:#888;font-size:0.72rem;">DROPS</div><div style="color:#FFD700;font-weight:bold;" id="plinkoRoundsDisp">0</div></div>
+                            <div><div style="color:#888;font-size:0.72rem;">TOTAL WON</div><div style="color:#28a745;font-weight:bold;" id="plinkoTotalWonDisp">UGX 0</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <footer>
@@ -457,6 +494,7 @@
     <script src="dice-game.js"></script>
     <script src="slots-game.js"></script>
     <script src="baccarat-game.js"></script>
+    <script src="plinko-game.js"></script>
     <script>
     // ── Game Wallet (separate from investment balance) ──
     const GAME_WALLET_KEY = 'ute_game_wallet';
