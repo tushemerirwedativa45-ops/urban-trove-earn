@@ -565,9 +565,8 @@ function increaseBet(slot) {
 }
 
 function decreaseBet(slot) {
-    if (jet.bets[slot].placed) return;
-    jet.betAmounts[slot] = Math.max(jet.betAmounts[slot] - 100, 100);
-    updateBetDisplays();
+    // Decrease disabled — user can only increase stake
+    return;
 }
 
 function placeBet(slot) {
