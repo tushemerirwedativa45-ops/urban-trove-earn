@@ -113,23 +113,5 @@
             if (e.key === 'ArrowRight') showSlide(currentSlide + 1);
         });
     </script>
-    button onclick="deposit()">Deposit</button>
-    
-    <script>
-    function deposit() {
-      fetch("http://localhost:3000/deposit", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          amount: 1000,
-          phone: "2567XXXXXXXX"
-        })
-      })
-      .then(res => res.json())
-      .then(data => alert(data.message));
-    }
-    </script>
 </body>
 </html>
