@@ -2129,3 +2129,21 @@ img, video, canvas {
 
 .dh-win  { background: rgba(40,167,69,0.2);  color: #28a745; border: 1px solid #28a745; }
 .dh-lose { background: rgba(220,53,69,0.2);  color: #dc3545; border: 1px solid #dc3545; }
+
+/* ===== Slots Game ===== */
+.slots-win-box {
+    background: rgba(40,167,69,0.15);
+    border: 2px solid #28a745;
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+    animation: winPop 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+}
+
+.slots-lose-box {
+    background: rgba(220,53,69,0.1);
+    border: 1px solid #dc3545;
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+}

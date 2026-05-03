@@ -95,13 +95,12 @@
                     <div class="game-stats-card"><span class="rtp">96% RTP</span><span class="players">1.2K Playing</span></div>
                     <button class="btn-play">PLAY NOW</button>
                 </div>
-                <div class="game-card coming-soon-card">
-                    <div class="coming-soon-badge">COMING SOON</div>
+                <div class="game-card" onclick="selectSlotsGame()">
                     <div class="game-icon">🎰</div>
-                    <h3>Slot Machine</h3>
-                    <p>Spin the reels and hit the jackpot</p>
-                    <div class="game-stats-card"><span class="rtp">95% RTP</span><span class="players">Coming Soon</span></div>
-                    <button class="btn-play" disabled>COMING SOON</button>
+                    <h3>Urban Slots</h3>
+                    <p>Spin the reels and match symbols to win big</p>
+                    <div class="game-stats-card"><span class="rtp">95% RTP</span><span class="players">1.8K Playing</span></div>
+                    <button class="btn-play">PLAY NOW</button>
                 </div>
                 <div class="game-card coming-soon-card">
                     <div class="coming-soon-badge">COMING SOON</div>
@@ -328,6 +327,72 @@
             </div>
         </section>
 
+
+        <!-- Slots Game Section -->
+        <section id="slotsGameSection" style="display:none;background:#0d0d1a;min-height:100vh;padding:20px;">
+            <div style="max-width:900px;margin:0 auto;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+                    <button onclick="backFromSlots()" style="background:rgba(255,255,255,0.1);border:1px solid #aaa;color:white;padding:10px 20px;border-radius:8px;cursor:pointer;">← Back</button>
+                    <div style="color:#FFD700;font-size:1.5rem;font-weight:bold;letter-spacing:2px;">🎰 URBAN SLOTS</div>
+                    <div style="background:rgba(0,0,0,0.4);border:1px solid #FFD700;border-radius:8px;padding:8px 18px;">
+                        <span style="color:#aaa;font-size:0.8rem;">WALLET: </span>
+                        <span style="color:#FFD700;font-weight:bold;" id="slotsBalDisplay">UGX 0</span>
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;">
+                    <!-- Canvas -->
+                    <div style="background:#0a0a1a;border:2px solid #FFD700;border-radius:12px;overflow:hidden;min-height:380px;">
+                        <canvas id="slotsCanvas" width="600" height="380" style="width:100%;height:auto;"></canvas>
+                    </div>
+
+                    <!-- Controls -->
+                    <div style="display:flex;flex-direction:column;gap:15px;">
+                        <!-- Paytable -->
+                        <div style="background:rgba(0,0,0,0.4);border:1px solid #1a1a3a;border-radius:10px;padding:15px;">
+                            <div style="color:#FFD700;font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Paytable</div>
+                            <div style="font-size:0.78rem;color:#aaa;display:grid;gap:4px;">
+                                <div>7️⃣7️⃣7️⃣ = <span style="color:#FFD700;">50x</span></div>
+                                <div>💎💎💎 = <span style="color:#00cfff;">30x</span></div>
+                                <div>🍒🍒🍒 = <span style="color:#ff6b6b;">20x</span></div>
+                                <div>🍋🍋🍋 = <span style="color:#FFD700;">15x</span></div>
+                                <div>🍇🍇🍇 = <span style="color:#c084fc;">10x</span></div>
+                                <div>🔔🔔🔔 = <span style="color:#fbbf24;">8x</span></div>
+                                <div>⭐⭐⭐ = <span style="color:#f59e0b;">5x</span></div>
+                                <div>🍀🍀🍀 = <span style="color:#28a745;">3x</span></div>
+                                <div style="margin-top:5px;">7️⃣7️⃣ = <span style="color:#FFD700;">5x</span> &nbsp; 💎💎 = <span style="color:#00cfff;">3x</span></div>
+                                <div>🍒🍒 = <span style="color:#ff6b6b;">2x</span> &nbsp; 🍋🍋 = <span style="color:#FFD700;">1x</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Bet amount -->
+                        <div style="background:rgba(0,0,0,0.4);border:1px solid #1a1a3a;border-radius:10px;padding:15px;">
+                            <div style="color:#FFD700;font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Bet Amount</div>
+                            <div style="background:rgba(0,0,0,0.4);border:1px solid #FFD700;border-radius:6px;padding:10px;text-align:center;color:#FFD700;font-weight:bold;font-size:1.2rem;margin-bottom:10px;" id="slotsBetDisplay">UGX 100</div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                                <button onclick="increaseSlotsbet()" style="background:rgba(40,167,69,0.2);border:1px solid #28a745;color:#28a745;padding:8px;border-radius:6px;cursor:pointer;font-weight:bold;">+ 100</button>
+                                <button onclick="halfSlotsBet()" style="background:rgba(255,255,255,0.08);border:1px solid #333;color:#aaa;padding:8px;border-radius:6px;cursor:pointer;">1/2</button>
+                                <button onclick="doubleSlotsBet()" style="background:rgba(255,255,255,0.08);border:1px solid #333;color:#aaa;padding:8px;border-radius:6px;cursor:pointer;">x2</button>
+                                <button onclick="maxSlotsBet()" style="background:rgba(220,53,69,0.2);border:1px solid #dc3545;color:#ff6b6b;padding:8px;border-radius:6px;cursor:pointer;">MAX</button>
+                            </div>
+                        </div>
+
+                        <!-- Spin button -->
+                        <button id="slotsSpinBtn" onclick="spinSlots()" style="background:linear-gradient(135deg,#FFD700,#ffed4e);color:#002a5c;border:none;padding:18px;border-radius:10px;font-size:1.3rem;font-weight:bold;cursor:pointer;letter-spacing:2px;">🎰 SPIN</button>
+
+                        <!-- Result -->
+                        <div id="slotsResultMsg" style="min-height:80px;"></div>
+
+                        <!-- Stats -->
+                        <div style="background:rgba(0,0,0,0.3);border:1px solid #1a1a3a;border-radius:8px;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center;">
+                            <div><div style="color:#888;font-size:0.72rem;">SPINS</div><div style="color:#FFD700;font-weight:bold;" id="slotsRoundsDisp">0</div></div>
+                            <div><div style="color:#888;font-size:0.72rem;">TOTAL WON</div><div style="color:#28a745;font-weight:bold;" id="slotsTotalWonDisp">UGX 0</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <footer>
@@ -337,6 +402,7 @@
     <script src="script.js"></script>
     <script src="airplane-game.js"></script>
     <script src="dice-game.js"></script>
+    <script src="slots-game.js"></script>
     <script>
     // ── Game Wallet (separate from investment balance) ──
     const GAME_WALLET_KEY = 'ute_game_wallet';
