@@ -5,6 +5,293 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Urban Trove Earn - Dashboard</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        /* ── Hero carousel (same as deposit page) ── */
+        .dashboard-hero {
+            position: relative;
+            height: 320px;
+            overflow: hidden;
+            border-radius: 0 0 20px 20px;
+            margin-bottom: 0;
+        }
+
+        .dashboard-hero .carousel-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .dashboard-hero .carousel-slide {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+
+        .dashboard-hero .carousel-slide.active { opacity: 1; }
+
+        .dashboard-hero .hero-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(0,42,92,0.75) 0%, rgba(0,0,0,0.5) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 40px;
+            z-index: 2;
+        }
+
+        .hero-greeting {
+            color: rgba(255,255,255,0.7);
+            font-size: 1rem;
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+        }
+
+        .hero-name {
+            color: white;
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+        }
+
+        .hero-balance-label {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+
+        .hero-balance {
+            color: #FFD700;
+            font-size: 2.8rem;
+            font-weight: bold;
+            text-shadow: 0 0 20px rgba(255,215,0,0.4);
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .hero-btn {
+            padding: 11px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .hero-btn.green {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .hero-btn.blue {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(8px);
+        }
+
+        .hero-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.3); }
+
+        /* ── Dashboard body ── */
+        .dashboard-body {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        /* ── Stat cards ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            border-left: 4px solid #28a745;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card.gold  { border-left-color: #FFD700; }
+        .stat-card.blue  { border-left-color: #002a5c; }
+        .stat-card.red   { border-left-color: #dc3545; }
+        .stat-card.purple{ border-left-color: #c084fc; }
+
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(40,167,69,0.06);
+        }
+
+        .stat-card.gold::after  { background: rgba(255,215,0,0.06); }
+        .stat-card.blue::after  { background: rgba(0,42,92,0.06); }
+        .stat-card.red::after   { background: rgba(220,53,69,0.06); }
+        .stat-card.purple::after{ background: rgba(192,132,252,0.06); }
+
+        .stat-card h3 {
+            color: #888;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .stat-card p {
+            color: #002a5c;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .stat-card .stat-icon {
+            font-size: 1.6rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        /* ── Charts section ── */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 12px;
+            padding: 22px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        .chart-card h3 {
+            color: #002a5c;
+            font-size: 0.95rem;
+            font-weight: bold;
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ── Investment progress ── */
+        .investment-progress {
+            background: linear-gradient(135deg, #002a5c, #003d85);
+            border-radius: 12px;
+            padding: 22px;
+            color: white;
+            margin-bottom: 25px;
+        }
+
+        .investment-progress h3 {
+            color: #FFD700;
+            font-size: 0.95rem;
+            margin-bottom: 18px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .progress-item {
+            margin-bottom: 16px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+        }
+
+        .progress-bar-bg {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            height: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 20px;
+            transition: width 1s ease;
+        }
+
+        /* ── Referral box ── */
+        .referral-box {
+            background: linear-gradient(135deg, #eef6ff, #f0fff4);
+            border: 1px solid #b8daff;
+            border-radius: 12px;
+            padding: 22px;
+            margin-bottom: 25px;
+        }
+
+        .referral-box h3 {
+            color: #002a5c;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        /* ── Transaction table ── */
+        .txn-card {
+            background: white;
+            border-radius: 12px;
+            padding: 22px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        .txn-card h2 {
+            color: #002a5c;
+            font-size: 1rem;
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .txn-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .txn-badge.completed { background: #d4edda; color: #155724; }
+        .txn-badge.pending   { background: #fff3cd; color: #856404; }
+        .txn-badge.processing{ background: #cfe2ff; color: #084298; }
+
+        @media (max-width: 768px) {
+            .dashboard-hero { height: 260px; }
+            .hero-name { font-size: 1.5rem; }
+            .hero-balance { font-size: 2rem; }
+            .hero-overlay { padding: 0 20px; }
+            .charts-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -20,7 +307,8 @@
                 <li><a href="vip.html">VIP</a></li>
                 <li><a href="referral.html">Referral</a></li>
                 <li id="nav-register"><a href="register.html">Register</a></li>
-                <li id="nav-login"><a href="login.html">Log In</a></li><li><button id="logout-btn" onclick="handleLogout()" style="display:none;background:none;border:none;color:white;cursor:pointer;font-size:1rem;padding:0;">Log Out</button></li>
+                <li id="nav-login"><a href="login.html">Log In</a></li>
+                <li><button id="logout-btn" onclick="handleLogout()" style="display:none;background:none;border:none;color:white;cursor:pointer;font-size:1rem;padding:0;">Log Out</button></li>
                 <li><a href="profile.html">Profile</a></li>
                 <li><a href="contact.html">Contact</a></li>
                 <li><a href="about.html">About</a></li>
@@ -28,82 +316,165 @@
         </nav>
     </header>
 
-    <main>
-        <section class="dashboard">
-            <h1>Your Dashboard</h1>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h3>Total Balance</h3>
-                    <p id="total-balance">UGX 0</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Earnings</h3>
-                    <p id="earnings">UGX 0</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Deposit Balance</h3>
-                    <p id="deposit-balance">UGX 0</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Deposits</h3>
-                    <p id="deposits">0</p>
-                </div>
-                <div class="stat-card">
-                    <h3>VIP Status</h3>
-                    <p id="vip-status">None</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Referral Joins</h3>
-                    <p id="vip-invites">0</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Referral Depositors</h3>
-                    <p id="referral-depositors">0</p>
-                </div>
+    <!-- Hero Section with carousel background -->
+    <div class="dashboard-hero">
+        <div class="carousel-wrapper">
+            <div class="carousel-slide active" style="background-image:url('homepics/make money.png')"></div>
+            <div class="carousel-slide" style="background-image:url('homepics/money.png')"></div>
+            <div class="carousel-slide" style="background-image:url('homepics/online earn.png')"></div>
+            <div class="carousel-slide" style="background-image:url('homepics/wow money.png')"></div>
+            <div class="carousel-slide" style="background-image:url('homepics/online money.png')"></div>
+        </div>
+        <div class="hero-overlay">
+            <div class="hero-greeting">Welcome back,</div>
+            <div class="hero-name" id="hero-username">Investor</div>
+            <div class="hero-balance-label">Total Balance</div>
+            <div class="hero-balance" id="hero-balance">UGX 0</div>
+            <div class="hero-actions">
+                <a href="deposit.html" class="hero-btn green">💳 Invest Now</a>
+                <a href="withdraw.html" class="hero-btn blue">💸 Withdraw</a>
+                <a href="games.html" class="hero-btn blue">🎮 Play Games</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-body">
+
+        <!-- Stat Cards -->
+        <div class="stats-grid">
+            <div class="stat-card green">
+                <span class="stat-icon">💰</span>
+                <h3>Total Balance</h3>
+                <p id="total-balance">UGX 0</p>
+            </div>
+            <div class="stat-card gold">
+                <span class="stat-icon">📈</span>
+                <h3>Total Earnings</h3>
+                <p id="earnings">UGX 0</p>
+            </div>
+            <div class="stat-card blue">
+                <span class="stat-icon">🏦</span>
+                <h3>Deposit Balance</h3>
+                <p id="deposit-balance">UGX 0</p>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">📊</span>
+                <h3>Total Deposits</h3>
+                <p id="deposits">0</p>
+            </div>
+            <div class="stat-card purple">
+                <span class="stat-icon">👑</span>
+                <h3>VIP Status</h3>
+                <p id="vip-status">None</p>
+            </div>
+            <div class="stat-card red">
+                <span class="stat-icon">🔗</span>
+                <h3>Referral Joins</h3>
+                <p id="vip-invites">0</p>
+            </div>
+            <div class="stat-card gold">
+                <span class="stat-icon">✅</span>
+                <h3>Referral Depositors</h3>
+                <p id="referral-depositors">0</p>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+            <!-- Line chart — balance growth over time -->
+            <div class="chart-card">
+                <h3>📈 Balance Growth Over Time</h3>
+                <canvas id="balanceLineChart" height="120"></canvas>
             </div>
 
-            <!-- Quick withdraw button -->
-            <div style="margin-bottom:25px;">
-                <a href="withdraw.html" class="btn-primary" style="display:inline-block;padding:14px 30px;font-size:1rem;text-decoration:none;border-radius:8px;">
-                    💸 Withdraw Earnings
-                </a>
-                <a href="deposit.html" class="btn-primary" style="display:inline-block;padding:14px 30px;font-size:1rem;text-decoration:none;border-radius:8px;margin-left:12px;background:#002a5c;">
-                    💳 Make a Deposit
-                </a>
+            <!-- Doughnut — portfolio breakdown -->
+            <div class="chart-card">
+                <h3>🎯 Portfolio Breakdown</h3>
+                <canvas id="portfolioDoughnut" height="120"></canvas>
+            </div>
+        </div>
+
+        <!-- Second row charts -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:25px;">
+            <!-- Bar chart — monthly deposits -->
+            <div class="chart-card">
+                <h3>📊 Deposits vs Earnings</h3>
+                <canvas id="depositEarningsBar" height="140"></canvas>
             </div>
 
-            <!-- Referral link box on dashboard -->
-            <div class="referral-dashboard-box" id="referral-dashboard-box" style="margin-bottom:25px;background:#eef6ff;border:1px solid #b8daff;border-radius:10px;padding:20px;">
-                <h3 style="color:#002a5c;margin-bottom:8px;">🔗 Your Referral Link</h3>
-                <p style="color:#555;font-size:0.9rem;margin-bottom:10px;">Share this link. When friends register and deposit, your VIP level increases.</p>
-                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-                    <input type="text" id="dashboard-referral-link" readonly style="flex:1;min-width:200px;padding:10px;border:1px solid #b8daff;border-radius:6px;background:white;color:#002a5c;font-weight:bold;font-size:0.85rem;">
-                    <button onclick="copyDashboardLink()" class="btn-primary" style="white-space:nowrap;">📋 Copy</button>
+            <!-- Investment progress bars -->
+            <div class="investment-progress">
+                <h3>🏆 Investment Progress</h3>
+                <div class="progress-item">
+                    <div class="progress-label">
+                        <span>Return Rate</span>
+                        <span style="color:#28a745;">23%</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="prog-return" style="width:23%;background:linear-gradient(90deg,#28a745,#20c997);"></div>
+                    </div>
                 </div>
-                <div style="margin-top:12px;display:flex;gap:15px;flex-wrap:wrap;">
-                    <span style="font-size:0.85rem;color:#002a5c;"><strong>Next VIP:</strong> <span id="next-vip-info">5 depositors for VIP 1</span></span>
-                    <span style="font-size:0.85rem;color:#28a745;"><strong>Progress:</strong> <span id="vip-progress">0 / 5</span></span>
+                <div class="progress-item">
+                    <div class="progress-label">
+                        <span>VIP Progress</span>
+                        <span style="color:#FFD700;" id="prog-vip-label">0 / 5</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="prog-vip" style="width:0%;background:linear-gradient(90deg,#FFD700,#ffed4e);"></div>
+                    </div>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-label">
+                        <span>Earnings vs Target</span>
+                        <span style="color:#00cfff;" id="prog-earn-label">0%</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="prog-earn" style="width:0%;background:linear-gradient(90deg,#00cfff,#0099cc);"></div>
+                    </div>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-label">
+                        <span>16-Day Lock Progress</span>
+                        <span style="color:#c084fc;" id="prog-lock-label">—</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="prog-lock" style="width:0%;background:linear-gradient(90deg,#c084fc,#a855f7);"></div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <div class="transaction-history">
-                <h2>Transaction History</h2>
-                <table id="transaction-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Type</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="transaction-body">
-                        <!-- Transactions will be populated here -->
-                    </tbody>
-                </table>
+        <!-- Referral link box -->
+        <div class="referral-box" id="referral-dashboard-box" style="margin-bottom:25px;">
+            <h3>🔗 Your Referral Link</h3>
+            <p style="color:#555;font-size:0.9rem;margin-bottom:10px;">Share this link. When friends register and deposit, your VIP level increases.</p>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                <input type="text" id="dashboard-referral-link" readonly style="flex:1;min-width:200px;padding:10px;border:1px solid #b8daff;border-radius:6px;background:white;color:#002a5c;font-weight:bold;font-size:0.85rem;">
+                <button onclick="copyDashboardLink()" class="btn-primary" style="white-space:nowrap;">📋 Copy</button>
             </div>
-        </section>
-    </main>
+            <div style="margin-top:12px;display:flex;gap:15px;flex-wrap:wrap;">
+                <span style="font-size:0.85rem;color:#002a5c;"><strong>Next VIP:</strong> <span id="next-vip-info">5 depositors for VIP 1</span></span>
+                <span style="font-size:0.85rem;color:#28a745;"><strong>Progress:</strong> <span id="vip-progress">0 / 5</span></span>
+            </div>
+        </div>
+
+        <!-- Transaction History -->
+        <div class="txn-card">
+            <h2>📜 Transaction History</h2>
+            <table id="transaction-table" style="width:100%;border-collapse:collapse;">
+                <thead>
+                    <tr>
+                        <th style="background:#002a5c;color:white;padding:12px;text-align:left;font-size:0.85rem;">Date</th>
+                        <th style="background:#002a5c;color:white;padding:12px;text-align:left;font-size:0.85rem;">Type</th>
+                        <th style="background:#002a5c;color:white;padding:12px;text-align:left;font-size:0.85rem;">Amount</th>
+                        <th style="background:#002a5c;color:white;padding:12px;text-align:left;font-size:0.85rem;">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="transaction-body"></tbody>
+            </table>
+        </div>
+
+    </div>
 
     <footer>
         <p>&copy; 2026 Urban Trove Earn. All rights reserved.</p>
@@ -111,6 +482,16 @@
 
     <script src="script.js"></script>
     <script>
+        // ── Hero carousel ──
+        const heroSlides = document.querySelectorAll('.dashboard-hero .carousel-slide');
+        let heroIdx = 0;
+        setInterval(() => {
+            heroSlides[heroIdx].classList.remove('active');
+            heroIdx = (heroIdx + 1) % heroSlides.length;
+            heroSlides[heroIdx].classList.add('active');
+        }, 4000);
+
+        // ── Copy referral link ──
         function copyDashboardLink() {
             const input = document.getElementById('dashboard-referral-link');
             if (!input || !input.value) return;
@@ -121,6 +502,147 @@
                 setTimeout(() => btn.textContent = '📋 Copy', 2500);
             });
         }
+
+        // ── Build charts after data loads ──
+        function buildDashboardCharts() {
+            const txns     = (userData.transactions || []);
+            const deposits = txns.filter(t => t.type === 'Deposit' && t.status === 'Completed');
+            const earnings = txns.filter(t => t.type && t.type.includes('Interest'));
+
+            // ── Update hero ──
+            const heroName = document.getElementById('hero-username');
+            const heroBal  = document.getElementById('hero-balance');
+            if (heroName && userData.registeredUser) heroName.textContent = userData.registeredUser.username;
+            if (heroBal) heroBal.textContent = 'UGX ' + (userData.balance || 0).toLocaleString();
+
+            // ── Line chart — balance growth ──
+            const lineLabels = [];
+            const lineData   = [];
+            let running = 0;
+            const sorted = [...txns].reverse();
+            sorted.forEach(t => {
+                if (t.status === 'Completed' || t.status === 'completed') {
+                    running += Number(t.amount || 0);
+                    lineLabels.push(t.date || '');
+                    lineData.push(running);
+                }
+            });
+
+            const lineCtx = document.getElementById('balanceLineChart');
+            if (lineCtx) {
+                new Chart(lineCtx, {
+                    type: 'line',
+                    data: {
+                        labels: lineLabels.length > 0 ? lineLabels : ['Start', 'Day 1', 'Day 2', 'Day 3'],
+                        datasets: [{
+                            label: 'Balance (UGX)',
+                            data: lineData.length > 0 ? lineData : [0, 0, 0, 0],
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40,167,69,0.1)',
+                            borderWidth: 2.5,
+                            pointBackgroundColor: '#FFD700',
+                            pointRadius: 5,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: '#888', font: { size: 11 } }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                            y: { ticks: { color: '#888', font: { size: 11 }, callback: v => 'UGX ' + Number(v).toLocaleString() }, grid: { color: 'rgba(0,0,0,0.05)' } }
+                        }
+                    }
+                });
+            }
+
+            // ── Doughnut — portfolio ──
+            const totalDep  = deposits.reduce((s, t) => s + Number(t.amount || 0), 0);
+            const totalEarn = earnings.reduce((s, t) => s + Number(t.amount || 0), 0);
+            const doughCtx  = document.getElementById('portfolioDoughnut');
+            if (doughCtx) {
+                new Chart(doughCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Deposited', 'Earnings', 'Available'],
+                        datasets: [{
+                            data: [
+                                totalDep || 1,
+                                totalEarn || 0,
+                                Math.max((userData.balance || 0) - totalDep - totalEarn, 0)
+                            ],
+                            backgroundColor: ['#002a5c', '#28a745', '#FFD700'],
+                            borderColor: 'white',
+                            borderWidth: 3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { labels: { color: '#555', font: { size: 11 } } }
+                        }
+                    }
+                });
+            }
+
+            // ── Bar chart — deposits vs earnings ──
+            const barCtx = document.getElementById('depositEarningsBar');
+            if (barCtx) {
+                new Chart(barCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Total Deposited', 'Total Earnings', 'Current Balance'],
+                        datasets: [{
+                            data: [totalDep, totalEarn, userData.balance || 0],
+                            backgroundColor: ['rgba(0,42,92,0.8)', 'rgba(40,167,69,0.8)', 'rgba(255,215,0,0.8)'],
+                            borderColor: ['#002a5c', '#28a745', '#FFD700'],
+                            borderWidth: 2,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: '#888', font: { size: 11 } }, grid: { display: false } },
+                            y: { ticks: { color: '#888', font: { size: 11 }, callback: v => 'UGX ' + Number(v).toLocaleString() }, grid: { color: 'rgba(0,0,0,0.05)' } }
+                        }
+                    }
+                });
+            }
+
+            // ── Progress bars ──
+            const depositors    = userData.referralDepositors || 0;
+            const thresholds    = [5, 10, 15, 20, 25];
+            const nextThreshold = thresholds.find(t => t > depositors) || 25;
+            const vipPct        = Math.min(Math.round((depositors / nextThreshold) * 100), 100);
+
+            const earnPct = totalDep > 0 ? Math.min(Math.round((totalEarn / totalDep) * 100), 100) : 0;
+
+            document.getElementById('prog-vip').style.width       = vipPct + '%';
+            document.getElementById('prog-vip-label').textContent  = `${depositors} / ${nextThreshold}`;
+            document.getElementById('prog-earn').style.width       = earnPct + '%';
+            document.getElementById('prog-earn-label').textContent = earnPct + '%';
+
+            // 16-day lock progress
+            const lastDeposit = deposits[0];
+            if (lastDeposit && lastDeposit.depositTimestamp) {
+                const elapsed  = Date.now() - lastDeposit.depositTimestamp;
+                const lockMs   = 16 * 24 * 60 * 60 * 1000;
+                const lockPct  = Math.min(Math.round((elapsed / lockMs) * 100), 100);
+                const daysLeft = Math.max(0, Math.ceil((lockMs - elapsed) / (24 * 60 * 60 * 1000)));
+                document.getElementById('prog-lock').style.width       = lockPct + '%';
+                document.getElementById('prog-lock-label').textContent = lockPct >= 100 ? '✅ Unlocked' : `${daysLeft} days left`;
+            } else {
+                document.getElementById('prog-lock-label').textContent = 'No active deposit';
+            }
+        }
+
+        // Run charts after script.js loads data
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(buildDashboardCharts, 500);
+        });
     </script>
 </body>
 </html>
