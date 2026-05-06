@@ -61,6 +61,9 @@ function switchTab(name) {
         loadChat();
         scrollChatToBottom();
     }
+    if (name === 'auditlog') {
+        loadAuditLog();
+    }
 }
 
 // ── Logout ────────────────────────────────────────────────────────
@@ -183,6 +186,51 @@ async function loadData(ownerKey) {
     document.querySelectorAll('.online-dot').forEach(d => d.classList.remove('active'));
     const myDot = document.getElementById('dot-' + ownerKey);
     if (myDot) myDot.classList.add('active');
+}
+
+// ── Load audit log data ──────────────────────────────────────────
+async function loadAuditLog() {
+    const BACKEND = window.location.origin;
+    const container = document.getElementById('audit-log-container');
+    if (!container) return;
+
+    try {
+        const response = await fetch(`${BACKEND}/api/audit-log`);
+        const data = await response.json();
+        const logs = data.logs || [];
+
+        if (logs.length === 0) {
+            container.innerHTML = '<div class="empty-state">No audit log entries found.</div>';
+            return;
+        }
+
+        const rows = logs.map((log, i) => `
+            <tr>
+                <td>${i + 1}</td>
+                <td>${escHtml(log.created_at)}</td>
+                <td><span class="badge ${log.event_type.includes('BLOCKED') ? 'pending' : log.event_type.includes('ERROR') ? 'pending' : 'completed'}">${escHtml(log.event_type)}</span></td>
+                <td>${escHtml(log.email || 'N/A')}</td>
+                <td style="color:#c9a800;font-weight:bold;">${log.amount ? 'UGX ' + Number(log.amount).toLocaleString() : '—'}</td>
+                <td>${escHtml(log.reference || '—')}</td>
+                <td>${escHtml(log.ip_address || '—')}</td>
+                <td style="max-width:200px;word-wrap:break-word;">${escHtml(log.details || '—')}</td>
+            </tr>`).join('');
+
+        container.innerHTML = `
+            <table class="txn-table">
+                <thead>
+                    <tr>
+                        <th>#</th><th>Date</th><th>Event</th><th>Email</th>
+                        <th>Amount</th><th>Reference</th><th>IP</th><th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>`;
+
+    } catch (err) {
+        console.error('[AUDIT LOG] Failed to load:', err.message);
+        container.innerHTML = '<div class="empty-state">Could not load audit log from server.</div>';
+    }
 }
 
 // ── Chat ──────────────────────────────────────────────────────────

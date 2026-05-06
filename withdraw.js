@@ -6,6 +6,7 @@
 //  - Calls backend to record withdrawal
 // ═══════════════════════════════════════════════════════════
 
+const API_BASE     = window.location.origin;
 const LOCK_DAYS    = 16;
 const LOCK_MS      = LOCK_DAYS * 24 * 60 * 60 * 1000;
 const MIN_WITHDRAW = 5000;
@@ -142,25 +143,37 @@ function updateWithdrawBalances() {
     }
 }
 
+// ── Round down to nearest 100 ────────────────────────────────
+function roundDownTo100(amount) {
+    return Math.floor(amount / 100) * 100;
+}
+
 // ── Handle withdrawal form submit ─────────────────────────────
 async function handleWithdrawSubmit(event) {
     event.preventDefault();
 
-    const amount  = parseFloat(document.getElementById('wd-amount').value);
-    const phone   = document.getElementById('wd-phone').value.trim();
-    const network = document.getElementById('wd-network').value;
-    const name    = document.getElementById('wd-name').value.trim();
-    const btn     = document.getElementById('withdraw-submit-btn');
+    const rawAmount = parseFloat(document.getElementById('wd-amount').value);
+    const phone     = document.getElementById('wd-phone').value.trim();
+    const network   = document.getElementById('wd-network').value;
+    const name      = document.getElementById('wd-name').value.trim();
+    const btn       = document.getElementById('withdraw-submit-btn');
+
+    // Round down to nearest 100 — remainder stays in account
+    const amount = roundDownTo100(rawAmount);
+    const remainder = rawAmount - amount;
 
     const stats = getWithdrawStats();
 
-    // Validations
-    if (!amount || amount < MIN_WITHDRAW) {
+    if (!rawAmount || rawAmount < MIN_WITHDRAW) {
         showWdStatus(`❌ Minimum withdrawal is UGX ${MIN_WITHDRAW.toLocaleString()}`, 'error');
         return;
     }
-    if (amount > stats.availableEarnings) {
+    if (rawAmount > stats.availableEarnings) {
         showWdStatus(`❌ You can only withdraw up to UGX ${stats.availableEarnings.toLocaleString()} (your unlocked earnings)`, 'error');
+        return;
+    }
+    if (amount < 100) {
+        showWdStatus('❌ Amount too small after rounding. Minimum is UGX 100.', 'error');
         return;
     }
     if (!phone) {
@@ -186,10 +199,8 @@ async function handleWithdrawSubmit(event) {
         const data = await response.json();
 
         if (data.status === 'success') {
-            // Mark the deposit(s) as withdrawn in localStorage
             markDepositsWithdrawn(amount);
 
-            // Record withdrawal transaction
             userData.transactions.unshift({
                 date:      new Date().toLocaleDateString(),
                 type:      'Withdrawal',
@@ -207,10 +218,9 @@ async function handleWithdrawSubmit(event) {
             updateWithdrawBalances();
             renderDepositSlots();
 
-            showWdStatus(
-                `✅ Withdrawal of UGX ${amount.toLocaleString()} sent to ${phone} (${network === 'MPS' ? 'MTN' : 'Airtel'}). Reference: ${data.reference}. You will receive the money within a few minutes.`,
-                'success'
-            );
+            let msg = `✅ Withdrawal of UGX ${amount.toLocaleString()} sent to ${phone} (${network === 'MPS' ? 'MTN' : 'Airtel'}). Reference: ${data.reference}.`;
+            if (remainder > 0) msg += ` UGX ${remainder.toLocaleString()} remains in your account (rounded down to nearest 100).`;
+            showWdStatus(msg, 'success');
 
             document.getElementById('withdraw-form').reset();
             prefillUserDetails();

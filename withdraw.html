@@ -341,7 +341,9 @@
                 <form id="withdraw-form">
                     <div class="form-group">
                         <label for="wd-amount">Withdrawal Amount (UGX)</label>
-                        <input type="number" id="wd-amount" placeholder="Enter amount to withdraw" min="5000">
+                        <input type="number" id="wd-amount" placeholder="Enter amount to withdraw" min="5000"
+                            oninput="previewRoundedAmount(this.value)">
+                        <div id="wd-round-preview" style="margin-top:6px;font-size:0.85rem;color:#28a745;display:none;"></div>
                     </div>
                     <div class="form-group">
                         <label for="wd-phone">Mobile Money Number</label>
@@ -395,5 +397,21 @@
 
     <script src="script.js"></script>
     <script src="withdraw.js"></script>
+    <script>
+        function previewRoundedAmount(val) {
+            const raw     = parseFloat(val);
+            const preview = document.getElementById('wd-round-preview');
+            if (!preview) return;
+            if (!raw || raw < 100) { preview.style.display = 'none'; return; }
+            const rounded   = Math.floor(raw / 100) * 100;
+            const remainder = raw - rounded;
+            preview.style.display = 'block';
+            if (remainder > 0) {
+                preview.innerHTML = `ℹ️ You will receive <strong>UGX ${rounded.toLocaleString()}</strong> &nbsp;|&nbsp; UGX ${remainder.toLocaleString()} stays in your account`;
+            } else {
+                preview.innerHTML = `✅ Amount: <strong>UGX ${rounded.toLocaleString()}</strong> (already rounded)`;
+            }
+        }
+    </script>
 </body>
 </html>
