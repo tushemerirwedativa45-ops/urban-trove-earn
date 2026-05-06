@@ -122,6 +122,11 @@ const PAYMENT_CONFIG = {
     // Set to true when you have a real payment gateway
     ENABLED: false,
     
+    // SANDBOX MODE - Check localStorage for dynamic control
+    get SANDBOX_MODE() {
+        return localStorage.getItem('ute_sandbox_mode') === 'true';
+    },
+    
     // Your payment gateway details (replace with actual values)
     GATEWAY: {
         API_URL: 'https://api.your-payment-gateway.com/v1/payments',
@@ -185,9 +190,9 @@ async function handleDeposit(event) {
         submitBtn.textContent = '⏳ Processing...'; 
     }
 
-    // Check if payment gateway is configured
-    if (PAYMENT_CONFIG.ENABLED && PAYMENT_CONFIG.GATEWAY.PUBLIC_KEY !== 'pk_test_your_public_key_here') {
-        // Use real payment gateway
+    // Check if payment gateway is configured or sandbox mode
+    if ((PAYMENT_CONFIG.ENABLED && PAYMENT_CONFIG.GATEWAY.PUBLIC_KEY !== 'pk_test_your_public_key_here') || PAYMENT_CONFIG.SANDBOX_MODE) {
+        // Use real payment gateway or sandbox
         await processRealPayment(amount, name, email, phone, network, referralCode);
     } else {
         // Show manual payment instructions
@@ -203,6 +208,12 @@ async function handleDeposit(event) {
 // Process payment through configured gateway
 async function processRealPayment(amount, name, email, phone, network, referralCode) {
     const txRef = `UTE-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+    
+    // SANDBOX MODE - Simulate payment for testing
+    if (PAYMENT_CONFIG.SANDBOX_MODE) {
+        showSandboxPayment(amount, name, email, phone, network, referralCode, txRef);
+        return;
+    }
     
     try {
         // Prepare payment data for your gateway
@@ -290,6 +301,166 @@ async function processRealPayment(amount, name, email, phone, network, referralC
             showManualPaymentInstructions(amount, phone, network, name, email, referralCode);
         }, 2000);
     }
+}
+
+// SANDBOX MODE - Simulate payment gateway for testing
+function showSandboxPayment(amount, name, email, phone, network, referralCode, txRef) {
+    const networkName = network === 'MPS' ? 'MTN Mobile Money' : 'Airtel Money';
+    
+    const sandboxUI = `
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: 2px solid #4f46e5; border-radius: 12px; padding: 25px; margin: 20px 0; color: white;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h3 style="color: #fbbf24; margin-bottom: 8px;">🧪 SANDBOX PAYMENT GATEWAY</h3>
+                <p style="font-size: 0.9rem; opacity: 0.9;">Testing Mode - No Real Money Required</p>
+            </div>
+            
+            <div style="background: rgba(255,255,255,0.1); padding: 18px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 0.9rem;">
+                    <div><strong>Amount:</strong> UGX ${amount.toLocaleString()}</div>
+                    <div><strong>Network:</strong> ${networkName}</div>
+                    <div><strong>Phone:</strong> ${phone}</div>
+                    <div><strong>Reference:</strong> ${txRef}</div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 20px;">
+                <p style="font-size: 0.85rem; margin-bottom: 15px;">Choose your test scenario:</p>
+                
+                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <button onclick="simulatePaymentSuccess('${amount}', '${name}', '${email}', '${phone}', '${network}', '${referralCode}', '${txRef}')" 
+                            style="background: #10b981; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;">
+                        ✅ SIMULATE SUCCESS
+                    </button>
+                    
+                    <button onclick="simulatePaymentFailure()" 
+                            style="background: #ef4444; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;">
+                        ❌ SIMULATE FAILURE
+                    </button>
+                    
+                    <button onclick="simulatePaymentPending('${amount}', '${name}', '${email}', '${phone}', '${network}', '${referralCode}', '${txRef}')" 
+                            style="background: #f59e0b; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;">
+                        ⏳ SIMULATE PENDING
+                    </button>
+                </div>
+            </div>
+            
+            <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 6px; font-size: 0.8rem; text-align: center;">
+                <p>💡 <strong>Sandbox Mode:</strong> This simulates real payment flow without charging money. Perfect for testing!</p>
+            </div>
+        </div>
+    `;
+    
+    showStatus(sandboxUI, 'info');
+}
+
+// Simulate successful payment
+function simulatePaymentSuccess(amount, name, email, phone, network, referralCode, txRef) {
+    // Record successful transaction
+    userData.transactions.unshift({
+        date: new Date().toLocaleDateString(),
+        depositTimestamp: Date.now(),
+        type: 'Deposit',
+        amount: parseFloat(amount),
+        earnings: Math.round(parseFloat(amount) * RETURN_RATE),
+        status: 'Completed',
+        txRef: txRef,
+        gateway: 'sandbox'
+    });
+    
+    // Update balances
+    userData.balance += parseFloat(amount);
+    userData.deposits += 1;
+    userData.depositTotal = (userData.depositTotal || 0) + parseFloat(amount);
+    
+    saveData();
+    updateDashboard();
+
+    // Send to backend
+    fetch(`${API_BASE}/api/record-deposit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            amount: parseFloat(amount), 
+            email, 
+            phone, 
+            name, 
+            network, 
+            referralCode: referralCode || '', 
+            txRef,
+            status: 'completed'
+        })
+    }).catch(() => console.log('Backend offline'));
+
+    showStatus(`
+        <div style="background: #d1fae5; border: 2px solid #10b981; border-radius: 8px; padding: 20px; text-align: center;">
+            <h3 style="color: #065f46;">🎉 SANDBOX PAYMENT SUCCESS!</h3>
+            <p style="color: #065f46; margin: 10px 0;">Reference: <strong>${txRef}</strong></p>
+            <p style="color: #065f46;">Deposit of UGX ${parseFloat(amount).toLocaleString()} completed successfully!</p>
+            <p style="color: #065f46; font-size: 0.9rem; margin-top: 10px;">💡 This was a test transaction - no real money was charged.</p>
+            <div style="margin-top: 15px;">
+                <button onclick="window.location.href='dashboard.html'" 
+                        style="background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                    Go to Dashboard
+                </button>
+            </div>
+        </div>
+    `, 'success');
+
+    // Clear form
+    document.getElementById('deposit-form').reset();
+}
+
+// Simulate failed payment
+function simulatePaymentFailure() {
+    showStatus(`
+        <div style="background: #fef2f2; border: 2px solid #ef4444; border-radius: 8px; padding: 20px; text-align: center;">
+            <h3 style="color: #991b1b;">❌ SANDBOX PAYMENT FAILED!</h3>
+            <p style="color: #991b1b; margin: 10px 0;">Simulated payment failure - insufficient funds or network error.</p>
+            <p style="color: #991b1b; font-size: 0.9rem;">💡 This is a test scenario. Try again or test success flow.</p>
+            <div style="margin-top: 15px;">
+                <button onclick="location.reload()" 
+                        style="background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                    Try Again
+                </button>
+            </div>
+        </div>
+    `, 'error');
+}
+
+// Simulate pending payment
+function simulatePaymentPending(amount, name, email, phone, network, referralCode, txRef) {
+    // Record pending transaction
+    userData.transactions.unshift({
+        date: new Date().toLocaleDateString(),
+        depositTimestamp: Date.now(),
+        type: 'Deposit',
+        amount: parseFloat(amount),
+        earnings: Math.round(parseFloat(amount) * RETURN_RATE),
+        status: 'Pending Verification',
+        txRef: txRef,
+        gateway: 'sandbox'
+    });
+    
+    saveData();
+    updateDashboard();
+
+    showStatus(`
+        <div style="background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 20px; text-align: center;">
+            <h3 style="color: #92400e;">⏳ SANDBOX PAYMENT PENDING!</h3>
+            <p style="color: #92400e; margin: 10px 0;">Reference: <strong>${txRef}</strong></p>
+            <p style="color: #92400e;">Payment is being processed. This simulates a pending state.</p>
+            <p style="color: #92400e; font-size: 0.9rem; margin-top: 10px;">💡 In real mode, admin would verify this manually.</p>
+            <div style="margin-top: 15px;">
+                <button onclick="window.location.href='dashboard.html'" 
+                        style="background: #f59e0b; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                    Go to Dashboard
+                </button>
+            </div>
+        </div>
+    `, 'success');
+
+    // Clear form
+    document.getElementById('deposit-form').reset();
 }
 
 // Manual payment instructions (fallback)
@@ -699,6 +870,9 @@ function updateNavForLoginState() {
 document.addEventListener('DOMContentLoaded', function() {
     loadData();
     updateNavForLoginState();
+    
+    // Show sandbox indicator if enabled
+    showSandboxIndicator();
 
     const depositForm = document.getElementById('deposit-form');
     if (depositForm) {
@@ -744,3 +918,16 @@ document.addEventListener('DOMContentLoaded', function() {
         updateProfilePage();
     }
 });
+
+// Show sandbox mode indicator
+function showSandboxIndicator() {
+    if (PAYMENT_CONFIG.SANDBOX_MODE) {
+        const indicator = document.createElement('div');
+        indicator.innerHTML = `
+            <div style="position: fixed; top: 10px; right: 10px; z-index: 9999; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 8px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer;" onclick="window.open('sandbox.html', '_blank')">
+                🧪 SANDBOX MODE
+            </div>
+        `;
+        document.body.appendChild(indicator);
+    }
+}
