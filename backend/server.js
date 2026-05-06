@@ -507,6 +507,51 @@ app.get('/api/game-stats', (req, res) => {
 });
 
 // ════════════════════════════════════════════════════════════
+//  FLUTTERWAVE WEBHOOK — Verify payments server-side
+// ════════════════════════════════════════════════════════════
+app.post('/api/flutterwave-webhook', async (req, res) => {
+    const secretHash = process.env.FLW_SECRET_HASH || 'your-webhook-secret';
+    const signature = req.headers['verif-hash'];
+    
+    if (!signature || signature !== secretHash) {
+        return res.status(401).json({ status: 'error', message: 'Unauthorized webhook' });
+    }
+
+    const payload = req.body;
+    
+    if (payload.event === 'charge.completed' && payload.data.status === 'successful') {
+        const txRef = payload.data.tx_ref;
+        const amount = payload.data.amount;
+        const email = payload.data.customer.email;
+        const phone = payload.data.customer.phone_number;
+        const name = payload.data.customer.name;
+        
+        try {
+            // Check if already recorded
+            const existing = await pool.query('SELECT id FROM deposits WHERE tx_ref = $1', [txRef]);
+            if (existing.rows.length > 0) {
+                return res.json({ status: 'success', message: 'Already recorded' });
+            }
+
+            // Record the verified payment
+            await pool.query(
+                "INSERT INTO deposits (tx_ref, amount, email, phone, name, status) VALUES ($1,$2,$3,$4,$5,'completed')",
+                [txRef, amount, email, phone, name]
+            );
+
+            await auditLog('PAYMENT_VERIFIED', email, amount, txRef, req.ip, 'Flutterwave webhook verified payment');
+            
+            return res.json({ status: 'success', message: 'Payment recorded' });
+        } catch (err) {
+            console.error('[WEBHOOK ERROR]', err.message);
+            return res.status(500).json({ status: 'error', message: 'Database error' });
+        }
+    }
+
+    res.json({ status: 'success', message: 'Webhook received' });
+});
+
+// ════════════════════════════════════════════════════════════
 //  START SERVER
 // ════════════════════════════════════════════════════════════
 const PORT = process.env.PORT || 3000;

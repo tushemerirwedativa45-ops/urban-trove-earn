@@ -135,54 +135,78 @@ async function handleDeposit(event) {
         return;
     }
 
-    const returnAmount = planOptions[amount] || Math.round(amount * (1 + RETURN_RATE));
-
     if (!name || !email || !phone) {
         showStatus('Please fill in your name, email and phone number.', 'error');
         return;
     }
 
-    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '⏳ Processing...'; }
-    showStatus('Recording your deposit...', '');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '⏳ Processing Payment...'; }
+    showStatus('🔄 Initiating payment with Flutterwave...', '');
 
-    // Save deposit locally
+    // Generate transaction reference
     const txRef = `UTE-${Date.now()}`;
-    userData.balance      += amount;
-    userData.deposits     += 1;
-    userData.depositTotal  = (userData.depositTotal || 0) + amount;
-    userData.transactions.unshift({
-        date:             new Date().toLocaleDateString(),
-        depositTimestamp: Date.now(),
-        type:             'Deposit',
-        amount:           amount,
-        earnings:         Math.round(amount * RETURN_RATE),
-        status:           'Completed',
-        txRef
-    });
-    saveData();
-    updateDashboard();
 
-    // Record on backend
-    fetch(`${API_BASE}/api/record-deposit`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount, email, phone, name, network, planAmount: returnAmount, referralCode: referralCode || '', txRef })
-    }).catch(() => {});
-
-    showStatus(`✅ Deposit of UGX ${amount.toLocaleString()} recorded successfully! Your 23% earnings will be available after 16 days.`, 'success');
-
-    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '💳 DEPOSIT NOW'; }
-
-    // Handle referral
-    if (referralCode && referralCode === userData.referralCode) {
-        userData.referralDepositors = (userData.referralDepositors || 0) + 1;
-        userData.transactions.unshift({
-            date:   new Date().toLocaleDateString(),
-            type:   'Referral Deposit',
+    try {
+        // Step 1: Initialize Flutterwave payment
+        const paymentData = {
+            tx_ref: txRef,
             amount: amount,
-            status: 'Completed'
+            currency: 'UGX',
+            redirect_url: `${window.location.origin}/payment-callback.html`,
+            customer: {
+                email: email,
+                phone_number: phone,
+                name: name
+            },
+            customizations: {
+                title: 'Urban Trove Earn Investment',
+                description: `Investment Plan - UGX ${amount.toLocaleString()}`,
+                logo: `${window.location.origin}/logo.png`
+            }
+        };
+
+        // Call Flutterwave API to initialize payment
+        const response = await fetch('https://api.flutterwave.com/v3/payments', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer FLWPUBK_TEST-SANDBOXDEMOKEY-X', // Replace with your public key
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(paymentData)
         });
-        saveData();
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            // Record pending transaction locally
+            userData.transactions.unshift({
+                date: new Date().toLocaleDateString(),
+                depositTimestamp: Date.now(),
+                type: 'Deposit',
+                amount: amount,
+                earnings: Math.round(amount * RETURN_RATE),
+                status: 'Pending Payment',
+                txRef: txRef
+            });
+            saveData();
+            updateDashboard();
+
+            showStatus('🔄 Redirecting to payment gateway...', '');
+            
+            // Redirect to Flutterwave payment page
+            window.location.href = result.data.link;
+        } else {
+            throw new Error(result.message || 'Payment initialization failed');
+        }
+
+    } catch (error) {
+        console.error('Payment error:', error);
+        showStatus(`❌ Payment failed: ${error.message}. Please try again or contact support.`, 'error');
+        
+        if (submitBtn) { 
+            submitBtn.disabled = false; 
+            submitBtn.textContent = '💳 DEPOSIT NOW'; 
+        }
     }
 }
 
