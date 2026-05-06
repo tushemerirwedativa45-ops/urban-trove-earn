@@ -113,8 +113,42 @@ function updateDashboard() {
     }
 }
 
+// ════════════════════════════════════════════════════════════
+//  PAYMENT GATEWAY CONFIGURATION
+//  Replace these with your actual payment provider details
+// ════════════════════════════════════════════════════════════
+
+const PAYMENT_CONFIG = {
+    // Set to true when you have a real payment gateway
+    ENABLED: false,
+    
+    // Your payment gateway details (replace with actual values)
+    GATEWAY: {
+        API_URL: 'https://api.your-payment-gateway.com/v1/payments',
+        PUBLIC_KEY: 'pk_test_your_public_key_here',
+        SECRET_KEY: 'sk_test_your_secret_key_here', // Keep this secure!
+        WEBHOOK_SECRET: 'your_webhook_secret_here'
+    },
+    
+    // Supported payment methods
+    METHODS: {
+        MOBILE_MONEY: true,
+        CARD: true,
+        BANK_TRANSFER: false
+    },
+    
+    // Currency and limits
+    CURRENCY: 'UGX',
+    MIN_AMOUNT: 30000,
+    
+    // Callback URLs
+    SUCCESS_URL: window.location.origin + '/payment-success.html',
+    CANCEL_URL: window.location.origin + '/deposit.html',
+    WEBHOOK_URL: window.location.origin + '/api/payment-webhook'
+};
+
 // Backend API base URL
-const API_BASE = 'http://localhost:3000';
+const API_BASE = window.location.origin;
 
 // Handle deposit form submission
 async function handleDeposit(event) {
@@ -130,8 +164,8 @@ async function handleDeposit(event) {
 
     const amount = parseFloat(planInput?.value);
 
-    if (!amount || amount < 30000) {
-        showStatus('Please choose a valid investment plan with at least UGX 30,000.', 'error');
+    if (!amount || amount < PAYMENT_CONFIG.MIN_AMOUNT) {
+        showStatus(`Please choose a valid investment plan with at least ${PAYMENT_CONFIG.CURRENCY} ${PAYMENT_CONFIG.MIN_AMOUNT.toLocaleString()}.`, 'error');
         return;
     }
 
@@ -140,74 +174,222 @@ async function handleDeposit(event) {
         return;
     }
 
-    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '⏳ Processing Payment...'; }
-    showStatus('🔄 Initiating payment with Flutterwave...', '');
+    // Validate phone number format for Uganda
+    if (!/^0[7][0-9]{8}$/.test(phone)) {
+        showStatus('Please enter a valid Ugandan phone number (e.g., 0702762675)', 'error');
+        return;
+    }
 
-    // Generate transaction reference
-    const txRef = `UTE-${Date.now()}`;
+    if (submitBtn) { 
+        submitBtn.disabled = true; 
+        submitBtn.textContent = '⏳ Processing...'; 
+    }
 
+    // Check if payment gateway is configured
+    if (PAYMENT_CONFIG.ENABLED && PAYMENT_CONFIG.GATEWAY.PUBLIC_KEY !== 'pk_test_your_public_key_here') {
+        // Use real payment gateway
+        await processRealPayment(amount, name, email, phone, network, referralCode);
+    } else {
+        // Show manual payment instructions
+        showManualPaymentInstructions(amount, phone, network, name, email, referralCode);
+    }
+
+    if (submitBtn) { 
+        submitBtn.disabled = false; 
+        submitBtn.textContent = '💳 DEPOSIT NOW'; 
+    }
+}
+
+// Process payment through configured gateway
+async function processRealPayment(amount, name, email, phone, network, referralCode) {
+    const txRef = `UTE-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+    
     try {
-        // Step 1: Initialize Flutterwave payment
+        // Prepare payment data for your gateway
         const paymentData = {
-            tx_ref: txRef,
+            // Standard fields - customize based on your gateway's API
+            reference: txRef,
             amount: amount,
-            currency: 'UGX',
-            redirect_url: `${window.location.origin}/payment-callback.html`,
+            currency: PAYMENT_CONFIG.CURRENCY,
+            
+            // Customer information
             customer: {
+                name: name,
                 email: email,
-                phone_number: phone,
-                name: name
+                phone: phone
             },
-            customizations: {
-                title: 'Urban Trove Earn Investment',
-                description: `Investment Plan - UGX ${amount.toLocaleString()}`,
-                logo: `${window.location.origin}/logo.png`
+            
+            // Payment method
+            payment_method: network === 'MPS' ? 'mtn_mobile_money' : 'airtel_money',
+            
+            // Callback URLs
+            callback_url: PAYMENT_CONFIG.SUCCESS_URL + `?tx_ref=${txRef}`,
+            return_url: PAYMENT_CONFIG.SUCCESS_URL,
+            cancel_url: PAYMENT_CONFIG.CANCEL_URL,
+            
+            // Additional metadata
+            metadata: {
+                referral_code: referralCode || '',
+                plan_type: 'investment',
+                source: 'urban_trove_earn'
             }
         };
 
-        // Call Flutterwave API to initialize payment
-        const response = await fetch('https://api.flutterwave.com/v3/payments', {
+        showStatus('🔄 Connecting to payment gateway...', '');
+
+        // Call your payment gateway API
+        const response = await fetch(PAYMENT_CONFIG.GATEWAY.API_URL, {
             method: 'POST',
             headers: {
-                'Authorization': 'Bearer FLWPUBK_TEST-SANDBOXDEMOKEY-X', // Replace with your public key
-                'Content-Type': 'application/json'
+                'Authorization': `Bearer ${PAYMENT_CONFIG.GATEWAY.PUBLIC_KEY}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify(paymentData)
         });
 
         const result = await response.json();
 
-        if (result.status === 'success') {
-            // Record pending transaction locally
+        if (response.ok && result.status === 'success') {
+            // Record pending transaction
             userData.transactions.unshift({
                 date: new Date().toLocaleDateString(),
                 depositTimestamp: Date.now(),
                 type: 'Deposit',
                 amount: amount,
                 earnings: Math.round(amount * RETURN_RATE),
-                status: 'Pending Payment',
-                txRef: txRef
+                status: 'Processing Payment',
+                txRef: txRef,
+                gateway: 'api'
             });
+            
             saveData();
             updateDashboard();
 
             showStatus('🔄 Redirecting to payment gateway...', '');
             
-            // Redirect to Flutterwave payment page
-            window.location.href = result.data.link;
+            // Redirect to payment page (customize based on your gateway response)
+            if (result.data && result.data.payment_url) {
+                window.location.href = result.data.payment_url;
+            } else if (result.payment_url) {
+                window.location.href = result.payment_url;
+            } else {
+                throw new Error('No payment URL received from gateway');
+            }
+            
         } else {
             throw new Error(result.message || 'Payment initialization failed');
         }
 
     } catch (error) {
-        console.error('Payment error:', error);
-        showStatus(`❌ Payment failed: ${error.message}. Please try again or contact support.`, 'error');
+        console.error('Payment gateway error:', error);
+        showStatus(`❌ Payment failed: ${error.message}. Please try again or use manual payment.`, 'error');
         
-        if (submitBtn) { 
-            submitBtn.disabled = false; 
-            submitBtn.textContent = '💳 DEPOSIT NOW'; 
-        }
+        // Fallback to manual payment
+        setTimeout(() => {
+            showManualPaymentInstructions(amount, phone, network, name, email, referralCode);
+        }, 2000);
     }
+}
+
+// Manual payment instructions (fallback)
+function showManualPaymentInstructions(amount, phone, network, name, email, referralCode) {
+    const networkName = network === 'MPS' ? 'MTN Mobile Money' : 'Airtel Money';
+    const paymentNumber = '0702762675'; // Replace with your actual payment number
+    
+    const instructions = `
+        <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #856404; margin-bottom: 15px;">📱 Complete Your Payment</h3>
+            <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                <p><strong>Amount:</strong> UGX ${amount.toLocaleString()}</p>
+                <p><strong>Send to:</strong> ${paymentNumber}</p>
+                <p><strong>Network:</strong> ${networkName}</p>
+                <p><strong>Your Phone:</strong> ${phone}</p>
+            </div>
+            
+            <h4 style="color: #856404; margin: 15px 0 10px;">Payment Steps:</h4>
+            <ol style="color: #856404; line-height: 1.6;">
+                <li>Dial *165# (MTN) or *185# (Airtel)</li>
+                <li>Select "Send Money"</li>
+                <li>Enter: <strong>${paymentNumber}</strong></li>
+                <li>Enter amount: <strong>UGX ${amount.toLocaleString()}</strong></li>
+                <li>Enter your PIN to confirm</li>
+                <li>Click "Confirm Payment" below after sending</li>
+            </ol>
+            
+            <div style="margin-top: 20px; text-align: center;">
+                <button onclick="confirmManualPayment('${amount}', '${phone}', '${network}', '${name}', '${email}', '${referralCode}')" 
+                        style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                    ✅ I HAVE SENT THE MONEY
+                </button>
+            </div>
+            
+            <p style="font-size: 0.9rem; color: #856404; margin-top: 15px; text-align: center;">
+                ⚠️ Only click "I HAVE SENT THE MONEY" after completing the mobile money transfer
+            </p>
+        </div>
+    `;
+    
+    showStatus(instructions, 'info');
+}
+
+// Confirm manual payment
+async function confirmManualPayment(amount, phone, network, name, email, referralCode) {
+    const txRef = `UTE-MANUAL-${Date.now()}`;
+    
+    // Record as pending verification
+    userData.transactions.unshift({
+        date: new Date().toLocaleDateString(),
+        depositTimestamp: Date.now(),
+        type: 'Deposit',
+        amount: parseFloat(amount),
+        earnings: Math.round(parseFloat(amount) * RETURN_RATE),
+        status: 'Pending Verification',
+        txRef: txRef,
+        phone: phone,
+        network: network,
+        gateway: 'manual'
+    });
+    
+    saveData();
+    updateDashboard();
+
+    // Send to backend for admin review
+    try {
+        await fetch(`${API_BASE}/api/record-deposit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                amount: parseFloat(amount), 
+                email, 
+                phone, 
+                name, 
+                network, 
+                referralCode: referralCode || '', 
+                txRef,
+                status: 'pending_verification'
+            })
+        });
+    } catch (err) {
+        console.log('Backend offline, recorded locally');
+    }
+
+    showStatus(`
+        <div style="background: #d4edda; border: 1px solid #28a745; border-radius: 8px; padding: 20px; text-align: center;">
+            <h3 style="color: #155724;">✅ Payment Confirmation Received</h3>
+            <p style="color: #155724; margin: 10px 0;">Reference: <strong>${txRef}</strong></p>
+            <p style="color: #155724;">Your deposit is being verified. You will receive your 23% returns after admin confirms payment and 16-day period.</p>
+            <div style="margin-top: 15px;">
+                <button onclick="window.location.href='dashboard.html'" 
+                        style="background: #002a5c; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
+                    Go to Dashboard
+                </button>
+            </div>
+        </div>
+    `, 'success');
+
+    // Clear form
+    document.getElementById('deposit-form').reset();
 }
 
 function handlePaymentCallback() { /* no payment gateway — nothing to handle */ }
