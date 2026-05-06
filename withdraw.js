@@ -37,13 +37,22 @@ function getWithdrawStats() {
     let totalWithdrawn    = 0;
     let nextUnlockMs      = null;
 
-    // Find all completed deposits and check if 16 days have passed
+    // Find all completed deposits and check if unlock time has passed
     transactions.forEach(txn => {
         if (txn.type === 'Deposit' && txn.status === 'Completed') {
-            const depositDate = txn.depositTimestamp || new Date(txn.date).getTime();
-            const unlockDate  = depositDate + LOCK_MS;
-            const now         = Date.now();
-            const earnings    = txn.earnings || Math.round(txn.amount * 0.23);
+            const now = Date.now();
+            let unlockDate;
+            
+            // Check if it's a custom investment with specific unlock date
+            if (txn.withdrawalUnlockDate) {
+                unlockDate = txn.withdrawalUnlockDate;
+            } else {
+                // Default 16-day lock from deposit timestamp
+                const depositDate = txn.depositTimestamp || new Date(txn.date).getTime();
+                unlockDate = depositDate + LOCK_MS;
+            }
+            
+            const earnings = txn.earnings || Math.round(txn.amount * 0.23);
 
             if (now >= unlockDate) {
                 // Unlocked — earnings available
@@ -80,12 +89,28 @@ function renderDepositSlots() {
     }
 
     container.innerHTML = deposits.map((txn, i) => {
-        const depositDate = txn.depositTimestamp || new Date(txn.date).getTime();
-        const unlockDate  = depositDate + LOCK_MS;
-        const now         = Date.now();
-        const earnings    = txn.earnings || Math.round(txn.amount * 0.23);
-        const isUnlocked  = now >= unlockDate;
-        const remaining   = unlockDate - now;
+        const now = Date.now();
+        let unlockDate, investmentType;
+        
+        // Check if it's a custom investment
+        if (txn.withdrawalUnlockDate) {
+            unlockDate = txn.withdrawalUnlockDate;
+            const customData = txn.customInvestment;
+            if (customData) {
+                investmentType = `Custom Investment (${customData.days} days at ${customData.profitPercent.toFixed(1)}%)`;
+            } else {
+                investmentType = 'Custom Investment';
+            }
+        } else {
+            // Default 16-day investment
+            const depositDate = txn.depositTimestamp || new Date(txn.date).getTime();
+            unlockDate = depositDate + LOCK_MS;
+            investmentType = 'Standard Investment (16 days at 23%)';
+        }
+        
+        const earnings = txn.earnings || Math.round(txn.amount * 0.23);
+        const isUnlocked = now >= unlockDate;
+        const remaining = unlockDate - now;
 
         let statusHtml;
         if (isUnlocked) {
@@ -102,6 +127,7 @@ function renderDepositSlots() {
                 <div class="slot-info">
                     <h4>Deposit #${i + 1} — ${txn.date}</h4>
                     <p>Deposited: UGX ${txn.amount.toLocaleString()} &nbsp;|&nbsp; Earnings: UGX ${earnings.toLocaleString()}${withdrawnTag}</p>
+                    <p style="font-size:0.82rem;color:#888;">${investmentType}</p>
                     <p style="font-size:0.82rem;color:#888;">Unlock date: ${new Date(unlockDate).toLocaleDateString('en-UG', { day:'numeric', month:'long', year:'numeric' })}</p>
                 </div>
                 <div class="slot-status">
@@ -258,8 +284,16 @@ function markDepositsWithdrawn(withdrawAmount) {
 
     (userData.transactions || []).forEach(txn => {
         if (txn.type === 'Deposit' && txn.status === 'Completed' && !txn.withdrawn) {
-            const depositDate = txn.depositTimestamp || new Date(txn.date).getTime();
-            const unlockDate  = depositDate + LOCK_MS;
+            let unlockDate;
+            
+            // Check if it's a custom investment
+            if (txn.withdrawalUnlockDate) {
+                unlockDate = txn.withdrawalUnlockDate;
+            } else {
+                const depositDate = txn.depositTimestamp || new Date(txn.date).getTime();
+                unlockDate = depositDate + LOCK_MS;
+            }
+            
             if (now >= unlockDate && remaining > 0) {
                 const earnings = txn.earnings || Math.round(txn.amount * 0.23);
                 if (earnings <= remaining) {

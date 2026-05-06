@@ -107,25 +107,51 @@
 
                 <!-- Custom Amount Plan Card -->
                 <div class="plan-card custom-plan-card" id="customPlanCard">
-                    <div class="plan-badge" style="background:#002a5c;">Custom</div>
-                    <h3>Invest Any Amount</h3>
-                    <div class="plan-amount" style="font-size:1.3rem;">UGX 30,000+</div>
+                    <div class="plan-badge" style="background:#002a5c;">Custom Investment</div>
+                    <h3>Create Your Own Plan</h3>
+                    <div class="plan-amount" style="font-size:1.1rem;">UGX 30,000+</div>
                     <div class="plan-return">
-                        <div class="return-label">Total Income</div>
-                        <div class="return-value" id="customReturnPreview">—</div>
+                        <div class="return-label">Your Returns</div>
+                        <div class="return-value" id="customReturnPreview">Enter details below</div>
                     </div>
-                    <div class="plan-benefit" id="customPercentPreview">Enter amount below</div>
-                    <div class="custom-amount-input-wrap">
-                        <input
-                            type="number"
-                            id="custom-amount-input"
-                            min="30000"
-                            step="1000"
-                            placeholder="e.g. 150,000"
-                            oninput="previewCustomPlan(this.value)"
-                        >
+                    <div class="plan-benefit" id="customPercentPreview">Choose from 16, 32, 48, 64, 80, 96 days</div>
+                    
+                    <!-- Custom Investment Inputs -->
+                    <div class="custom-investment-inputs" style="margin-top: 15px;">
+                        <div class="custom-input-group" style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 0.85rem; color: #666; margin-bottom: 4px;">Investment Amount (UGX)</label>
+                            <input
+                                type="number"
+                                id="custom-amount-input"
+                                min="30000"
+                                step="1000"
+                                placeholder="e.g. 100,000"
+                                style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;"
+                                oninput="calculateCustomInvestment()"
+                            >
+                        </div>
+                        <div class="custom-input-group" style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 0.85rem; color: #666; margin-bottom: 4px;">Investment Period (Days)</label>
+                            <select
+                                id="custom-days-input"
+                                style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;"
+                                onchange="calculateCustomInvestment()"
+                            >
+                                <option value="">Select investment period</option>
+                                <option value="16">16 days (23% profit)</option>
+                                <option value="32">32 days (43% profit)</option>
+                                <option value="48">48 days (63% profit)</option>
+                                <option value="64">64 days (83% profit)</option>
+                                <option value="80">80 days (103% profit)</option>
+                                <option value="96">96 days (123% profit)</option>
+                            </select>
+                        </div>
+                        <div id="custom-calculation-preview" style="background: #f8f9fa; padding: 10px; border-radius: 6px; font-size: 0.8rem; color: #333; margin-bottom: 12px; display: none;">
+                            <!-- Live calculation preview -->
+                        </div>
                     </div>
-                    <button class="btn-choose" id="customPlanBtn" onclick="selectCustomPlan()">Select Custom Plan</button>
+                    
+                    <button class="btn-choose" id="customPlanBtn" onclick="selectCustomInvestment()" disabled>Select Custom Plan</button>
                 </div>
             </div>
 
@@ -237,39 +263,102 @@
             });
         });
 
-        // Custom plan — live return preview
-        function previewCustomPlan(value) {
-            const amount  = parseFloat(value);
-            const preview = document.getElementById('customReturnPreview');
-            const percent = document.getElementById('customPercentPreview');
-            if (!amount || amount < 30000) {
-                preview.textContent = '—';
-                percent.textContent = 'Minimum UGX 30,000';
-                percent.style.color = '#dc3545';
+        // Custom investment calculation with live preview
+        function calculateCustomInvestment() {
+            const amount = parseFloat(document.getElementById('custom-amount-input').value);
+            const days = parseInt(document.getElementById('custom-days-input').value);
+            const preview = document.getElementById('custom-calculation-preview');
+            const returnPreview = document.getElementById('customReturnPreview');
+            const percentPreview = document.getElementById('customPercentPreview');
+            const selectBtn = document.getElementById('customPlanBtn');
+            
+            if (!amount || !days || amount < 30000) {
+                preview.style.display = 'none';
+                returnPreview.textContent = 'Enter details below';
+                percentPreview.textContent = 'Choose from 16, 32, 48, 64, 80, 96 days';
+                percentPreview.style.color = '#dc3545';
+                selectBtn.disabled = true;
                 return;
             }
-            const returnAmt = Math.round(amount * 1.23);
-            preview.textContent = 'UGX ' + returnAmt.toLocaleString();
-            percent.textContent = '+23% Return';
-            percent.style.color = '#28a745';
+            
+            // Calculate profit using your formula: (days/16) * 20% + 3%
+            const ratio = days / 16;
+            const calculatedPercent = ratio * 20;
+            const finalPercent = calculatedPercent + 3;
+            const totalReturn = Math.round(amount * (1 + finalPercent / 100));
+            const profit = totalReturn - amount;
+            
+            // Calculate withdrawal date
+            const withdrawalDate = new Date();
+            withdrawalDate.setDate(withdrawalDate.getDate() + days);
+            const formattedDate = withdrawalDate.toLocaleDateString('en-UG', { 
+                day: 'numeric', 
+                month: 'long', 
+                year: 'numeric' 
+            });
+            
+            // Update preview
+            returnPreview.textContent = `UGX ${totalReturn.toLocaleString()}`;
+            percentPreview.textContent = `+${finalPercent.toFixed(1)}% Profit`;
+            percentPreview.style.color = '#28a745';
+            
+            preview.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.75rem;">
+                    <div><strong>Investment:</strong> UGX ${amount.toLocaleString()}</div>
+                    <div><strong>Duration:</strong> ${days} days</div>
+                    <div><strong>Profit Rate:</strong> ${finalPercent.toFixed(1)}%</div>
+                    <div><strong>Profit Amount:</strong> UGX ${profit.toLocaleString()}</div>
+                    <div style="grid-column: 1 / -1;"><strong>Withdrawal Date:</strong> ${formattedDate}</div>
+                </div>
+            `;
+            preview.style.display = 'block';
+            selectBtn.disabled = false;
         }
-
-        function selectCustomPlan() {
-            const input   = document.getElementById('custom-amount-input');
-            const amount  = parseFloat(input.value);
-            if (!amount || amount < 30000) {
-                input.style.borderColor = '#dc3545';
-                input.focus();
+        
+        function selectCustomInvestment() {
+            const amount = parseFloat(document.getElementById('custom-amount-input').value);
+            const days = parseInt(document.getElementById('custom-days-input').value);
+            
+            if (!amount || !days || amount < 30000) {
+                alert('Please enter valid investment amount (min UGX 30,000) and select investment period');
                 return;
             }
-            input.style.borderColor = '#28a745';
+            
+            // Calculate returns
+            const ratio = days / 16;
+            const calculatedPercent = ratio * 20;
+            const finalPercent = calculatedPercent + 3;
+            const totalReturn = Math.round(amount * (1 + finalPercent / 100));
+            
+            // Calculate withdrawal date
+            const withdrawalDate = new Date();
+            withdrawalDate.setDate(withdrawalDate.getDate() + days);
+            
+            // Clear other selections
             planCards.forEach(c => c.classList.remove('selected'));
             document.getElementById('customPlanCard').classList.add('selected');
+            
+            // Set form values
             planInput.value = amount;
-            const returnAmt = Math.round(amount * 1.23);
-            planDisplay.innerHTML = `<span class="plan-name">Custom Plan — UGX ${amount.toLocaleString()}</span>`;
-            const planNote = document.getElementById('plan-note');
-            if (planNote) planNote.textContent = `You invested UGX ${amount.toLocaleString()} and will receive UGX ${returnAmt.toLocaleString()} (+23%).`;
+            
+            // Store custom investment data
+            window.customInvestmentData = {
+                amount: amount,
+                days: days,
+                profitPercent: finalPercent,
+                totalReturn: totalReturn,
+                withdrawalDate: withdrawalDate.getTime()
+            };
+            
+            // Update display
+            planDisplay.innerHTML = `
+                <span class="plan-name">Custom Investment — UGX ${amount.toLocaleString()}</span>
+                <div style="font-size: 0.8rem; color: #666; margin-top: 4px;">
+                    ${days} days • ${finalPercent.toFixed(1)}% profit • Returns UGX ${totalReturn.toLocaleString()}
+                </div>
+            `;
+            
+            updatePlanNote();
         }
     </script>
 </body>

@@ -190,13 +190,16 @@ async function handleDeposit(event) {
         submitBtn.textContent = '⏳ Processing...'; 
     }
 
+    // Get custom investment data if available
+    const customData = window.customInvestmentData || null;
+
     // Check if payment gateway is configured or sandbox mode
     if ((PAYMENT_CONFIG.ENABLED && PAYMENT_CONFIG.GATEWAY.PUBLIC_KEY !== 'pk_test_your_public_key_here') || PAYMENT_CONFIG.SANDBOX_MODE) {
         // Use real payment gateway or sandbox
-        await processRealPayment(amount, name, email, phone, network, referralCode);
+        await processRealPayment(amount, name, email, phone, network, referralCode, customData);
     } else {
         // Show manual payment instructions
-        showManualPaymentInstructions(amount, phone, network, name, email, referralCode);
+        showManualPaymentInstructions(amount, phone, network, name, email, referralCode, customData);
     }
 
     if (submitBtn) { 
@@ -206,12 +209,12 @@ async function handleDeposit(event) {
 }
 
 // Process payment through configured gateway
-async function processRealPayment(amount, name, email, phone, network, referralCode) {
+async function processRealPayment(amount, name, email, phone, network, referralCode, customData = null) {
     const txRef = `UTE-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
     
     // SANDBOX MODE - Simulate payment for testing
     if (PAYMENT_CONFIG.SANDBOX_MODE) {
-        showSandboxPayment(amount, name, email, phone, network, referralCode, txRef);
+        showSandboxPayment(amount, name, email, phone, network, referralCode, txRef, customData);
         return;
     }
     
@@ -304,8 +307,25 @@ async function processRealPayment(amount, name, email, phone, network, referralC
 }
 
 // SANDBOX MODE - Simulate payment gateway for testing
-function showSandboxPayment(amount, name, email, phone, network, referralCode, txRef) {
+function showSandboxPayment(amount, name, email, phone, network, referralCode, txRef, customData = null) {
     const networkName = network === 'MPS' ? 'MTN Mobile Money' : 'Airtel Money';
+    
+    let investmentDetails = '';
+    if (customData) {
+        const withdrawalDate = new Date(customData.withdrawalDate).toLocaleDateString('en-UG', {
+            day: 'numeric', month: 'long', year: 'numeric'
+        });
+        investmentDetails = `
+            <div style="background: rgba(255,255,255,0.15); padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div><strong>Investment Period:</strong> ${customData.days} days</div>
+                    <div><strong>Profit Rate:</strong> ${customData.profitPercent.toFixed(1)}%</div>
+                    <div><strong>Total Return:</strong> UGX ${customData.totalReturn.toLocaleString()}</div>
+                    <div><strong>Withdrawal Date:</strong> ${withdrawalDate}</div>
+                </div>
+            </div>
+        `;
+    }
     
     const sandboxUI = `
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: 2px solid #4f46e5; border-radius: 12px; padding: 25px; margin: 20px 0; color: white;">
@@ -323,11 +343,13 @@ function showSandboxPayment(amount, name, email, phone, network, referralCode, t
                 </div>
             </div>
             
+            ${investmentDetails}
+            
             <div style="text-align: center; margin-bottom: 20px;">
                 <p style="font-size: 0.85rem; margin-bottom: 15px;">Choose your test scenario:</p>
                 
                 <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                    <button onclick="simulatePaymentSuccess('${amount}', '${name}', '${email}', '${phone}', '${network}', '${referralCode}', '${txRef}')" 
+                    <button onclick="simulatePaymentSuccess('${amount}', '${name}', '${email}', '${phone}', '${network}', '${referralCode}', '${txRef}', ${customData ? JSON.stringify(customData).replace(/"/g, '&quot;') : 'null'})" 
                             style="background: #10b981; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;">
                         ✅ SIMULATE SUCCESS
                     </button>
@@ -337,7 +359,7 @@ function showSandboxPayment(amount, name, email, phone, network, referralCode, t
                         ❌ SIMULATE FAILURE
                     </button>
                     
-                    <button onclick="simulatePaymentPending('${amount}', '${name}', '${email}', '${phone}', '${network}', '${referralCode}', '${txRef}')" 
+                    <button onclick="simulatePaymentPending('${amount}', '${name}', '${email}', '${phone}', '${network}', '${referralCode}', '${txRef}', ${customData ? JSON.stringify(customData).replace(/"/g, '&quot;') : 'null'})" 
                             style="background: #f59e0b; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;">
                         ⏳ SIMULATE PENDING
                     </button>
@@ -354,17 +376,34 @@ function showSandboxPayment(amount, name, email, phone, network, referralCode, t
 }
 
 // Simulate successful payment
-function simulatePaymentSuccess(amount, name, email, phone, network, referralCode, txRef) {
+function simulatePaymentSuccess(amount, name, email, phone, network, referralCode, txRef, customData = null) {
+    // Calculate earnings based on custom investment or default rate
+    let earnings, withdrawalUnlockDate;
+    
+    if (customData && typeof customData === 'string') {
+        customData = JSON.parse(customData);
+    }
+    
+    if (customData) {
+        earnings = customData.totalReturn - parseFloat(amount);
+        withdrawalUnlockDate = customData.withdrawalDate;
+    } else {
+        earnings = Math.round(parseFloat(amount) * RETURN_RATE);
+        withdrawalUnlockDate = Date.now() + (16 * 24 * 60 * 60 * 1000); // 16 days from now
+    }
+    
     // Record successful transaction
     userData.transactions.unshift({
         date: new Date().toLocaleDateString(),
         depositTimestamp: Date.now(),
         type: 'Deposit',
         amount: parseFloat(amount),
-        earnings: Math.round(parseFloat(amount) * RETURN_RATE),
+        earnings: earnings,
         status: 'Completed',
         txRef: txRef,
-        gateway: 'sandbox'
+        gateway: 'sandbox',
+        customInvestment: customData || null,
+        withdrawalUnlockDate: withdrawalUnlockDate
     });
     
     // Update balances
@@ -387,15 +426,21 @@ function simulatePaymentSuccess(amount, name, email, phone, network, referralCod
             network, 
             referralCode: referralCode || '', 
             txRef,
-            status: 'completed'
+            status: 'completed',
+            customInvestment: customData
         })
     }).catch(() => console.log('Backend offline'));
+
+    const investmentSummary = customData ? 
+        `Custom Investment: ${customData.days} days at ${customData.profitPercent.toFixed(1)}% profit` :
+        `Standard Investment: 16 days at 23% profit`;
 
     showStatus(`
         <div style="background: #d1fae5; border: 2px solid #10b981; border-radius: 8px; padding: 20px; text-align: center;">
             <h3 style="color: #065f46;">🎉 SANDBOX PAYMENT SUCCESS!</h3>
             <p style="color: #065f46; margin: 10px 0;">Reference: <strong>${txRef}</strong></p>
             <p style="color: #065f46;">Deposit of UGX ${parseFloat(amount).toLocaleString()} completed successfully!</p>
+            <p style="color: #065f46; font-size: 0.9rem;">${investmentSummary}</p>
             <p style="color: #065f46; font-size: 0.9rem; margin-top: 10px;">💡 This was a test transaction - no real money was charged.</p>
             <div style="margin-top: 15px;">
                 <button onclick="window.location.href='dashboard.html'" 
@@ -406,8 +451,9 @@ function simulatePaymentSuccess(amount, name, email, phone, network, referralCod
         </div>
     `, 'success');
 
-    // Clear form
+    // Clear form and custom data
     document.getElementById('deposit-form').reset();
+    window.customInvestmentData = null;
 }
 
 // Simulate failed payment
@@ -428,17 +474,33 @@ function simulatePaymentFailure() {
 }
 
 // Simulate pending payment
-function simulatePaymentPending(amount, name, email, phone, network, referralCode, txRef) {
+function simulatePaymentPending(amount, name, email, phone, network, referralCode, txRef, customData = null) {
+    if (customData && typeof customData === 'string') {
+        customData = JSON.parse(customData);
+    }
+    
+    let earnings, withdrawalUnlockDate;
+    
+    if (customData) {
+        earnings = customData.totalReturn - parseFloat(amount);
+        withdrawalUnlockDate = customData.withdrawalDate;
+    } else {
+        earnings = Math.round(parseFloat(amount) * RETURN_RATE);
+        withdrawalUnlockDate = Date.now() + (16 * 24 * 60 * 60 * 1000);
+    }
+    
     // Record pending transaction
     userData.transactions.unshift({
         date: new Date().toLocaleDateString(),
         depositTimestamp: Date.now(),
         type: 'Deposit',
         amount: parseFloat(amount),
-        earnings: Math.round(parseFloat(amount) * RETURN_RATE),
+        earnings: earnings,
         status: 'Pending Verification',
         txRef: txRef,
-        gateway: 'sandbox'
+        gateway: 'sandbox',
+        customInvestment: customData || null,
+        withdrawalUnlockDate: withdrawalUnlockDate
     });
     
     saveData();
@@ -459,8 +521,9 @@ function simulatePaymentPending(amount, name, email, phone, network, referralCod
         </div>
     `, 'success');
 
-    // Clear form
+    // Clear form and custom data
     document.getElementById('deposit-form').reset();
+    window.customInvestmentData = null;
 }
 
 // Manual payment instructions (fallback)
