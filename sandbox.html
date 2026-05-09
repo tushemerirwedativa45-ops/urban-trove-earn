@@ -1,1 +1,239 @@
-<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Sandbox Control Panel - Urban Trove Earn</title>\n    <link rel=\"stylesheet\" href=\"styles.css\">\n    <style>\n        .sandbox-panel {\n            max-width: 800px;\n            margin: 50px auto;\n            padding: 30px;\n            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n            border-radius: 15px;\n            color: white;\n            box-shadow: 0 10px 30px rgba(0,0,0,0.3);\n        }\n        \n        .sandbox-header {\n            text-align: center;\n            margin-bottom: 30px;\n        }\n        \n        .sandbox-header h1 {\n            color: #fbbf24;\n            margin-bottom: 10px;\n        }\n        \n        .control-section {\n            background: rgba(255,255,255,0.1);\n            padding: 20px;\n            border-radius: 10px;\n            margin-bottom: 20px;\n        }\n        \n        .control-section h3 {\n            color: #fbbf24;\n            margin-bottom: 15px;\n        }\n        \n        .control-buttons {\n            display: flex;\n            gap: 10px;\n            flex-wrap: wrap;\n            margin-bottom: 15px;\n        }\n        \n        .control-btn {\n            padding: 10px 15px;\n            border: none;\n            border-radius: 6px;\n            font-weight: bold;\n            cursor: pointer;\n            font-size: 0.9rem;\n            transition: transform 0.2s;\n        }\n        \n        .control-btn:hover {\n            transform: scale(1.05);\n        }\n        \n        .btn-success { background: #10b981; color: white; }\n        .btn-danger { background: #ef4444; color: white; }\n        .btn-warning { background: #f59e0b; color: white; }\n        .btn-info { background: #3b82f6; color: white; }\n        \n        .status-display {\n            background: rgba(0,0,0,0.2);\n            padding: 15px;\n            border-radius: 8px;\n            margin-top: 15px;\n            font-family: monospace;\n            font-size: 0.85rem;\n        }\n        \n        .test-scenarios {\n            display: grid;\n            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));\n            gap: 15px;\n        }\n        \n        .scenario-card {\n            background: rgba(0,0,0,0.2);\n            padding: 15px;\n            border-radius: 8px;\n            text-align: center;\n        }\n        \n        .scenario-card h4 {\n            color: #fbbf24;\n            margin-bottom: 10px;\n        }\n    </style>\n</head>\n<body>\n    <div class=\"sandbox-panel\">\n        <div class=\"sandbox-header\">\n            <h1>🧪 SANDBOX CONTROL PANEL</h1>\n            <p>Test your Urban Trove Earn platform with fake money</p>\n        </div>\n        \n        <div class=\"control-section\">\n            <h3>🎛️ Sandbox Mode Controls</h3>\n            <div class=\"control-buttons\">\n                <button class=\"control-btn btn-success\" onclick=\"enableSandbox()\">✅ Enable Sandbox</button>\n                <button class=\"control-btn btn-danger\" onclick=\"disableSandbox()\">❌ Disable Sandbox</button>\n                <button class=\"control-btn btn-info\" onclick=\"checkSandboxStatus()\">📊 Check Status</button>\n                <button class=\"control-btn btn-warning\" onclick=\"clearTestData()\">🗑️ Clear Test Data</button>\n            </div>\n            <div id=\"sandbox-status\" class=\"status-display\">\n                Sandbox Status: Checking...\n            </div>\n        </div>\n        \n        <div class=\"control-section\">\n            <h3>🧪 Test Scenarios</h3>\n            <p style=\"margin-bottom: 15px;\">Quick links to test different payment flows:</p>\n            \n            <div class=\"test-scenarios\">\n                <div class=\"scenario-card\">\n                    <h4>💰 Test Deposit</h4>\n                    <p style=\"font-size: 0.85rem; margin-bottom: 10px;\">Test the deposit flow with sandbox payments</p>\n                    <button class=\"control-btn btn-success\" onclick=\"window.open('deposit.html', '_blank')\">Test Deposit</button>\n                </div>\n                \n                <div class=\"scenario-card\">\n                    <h4>💸 Test Withdrawal</h4>\n                    <p style=\"font-size: 0.85rem; margin-bottom: 10px;\">Test withdrawal after making deposits</p>\n                    <button class=\"control-btn btn-warning\" onclick=\"window.open('withdraw.html', '_blank')\">Test Withdrawal</button>\n                </div>\n                \n                <div class=\"scenario-card\">\n                    <h4>📊 View Dashboard</h4>\n                    <p style=\"font-size: 0.85rem; margin-bottom: 10px;\">Check your test transactions</p>\n                    <button class=\"control-btn btn-info\" onclick=\"window.open('dashboard.html', '_blank')\">View Dashboard</button>\n                </div>\n                \n                <div class=\"scenario-card\">\n                    <h4>👑 Admin Panel</h4>\n                    <p style=\"font-size: 0.85rem; margin-bottom: 10px;\">Monitor test transactions as admin</p>\n                    <button class=\"control-btn btn-info\" onclick=\"window.open('admin.html', '_blank')\">Admin Panel</button>\n                </div>\n            </div>\n        </div>\n        \n        <div class=\"control-section\">\n            <h3>📋 Test Instructions</h3>\n            <ol style=\"line-height: 1.8;\">\n                <li><strong>Enable Sandbox:</strong> Click \"Enable Sandbox\" above</li>\n                <li><strong>Test Deposit:</strong> Go to deposit page and choose any amount</li>\n                <li><strong>Choose Scenario:</strong> Click \"Simulate Success\", \"Simulate Failure\", or \"Simulate Pending\"</li>\n                <li><strong>Check Results:</strong> View dashboard to see test transactions</li>\n                <li><strong>Test Withdrawal:</strong> Try withdrawing your test earnings</li>\n                <li><strong>Admin View:</strong> Check admin panel to see all test data</li>\n            </ol>\n        </div>\n        \n        <div class=\"control-section\">\n            <h3>⚠️ Important Notes</h3>\n            <ul style=\"line-height: 1.8;\">\n                <li><strong>No Real Money:</strong> Sandbox mode uses fake money only</li>\n                <li><strong>Test Data:</strong> All transactions are marked as \"sandbox\"</li>\n                <li><strong>Reset Anytime:</strong> Use \"Clear Test Data\" to start fresh</li>\n                <li><strong>Production Ready:</strong> Disable sandbox for real payments</li>\n            </ul>\n        </div>\n        \n        <div style=\"text-align: center; margin-top: 30px;\">\n            <button class=\"control-btn btn-info\" onclick=\"window.location.href='index.html'\">🏠 Back to Home</button>\n        </div>\n    </div>\n    \n    <script src=\"script.js\"></script>\n    <script>\n        function enableSandbox() {\n            // This would normally update the config, but for demo we'll use localStorage\n            localStorage.setItem('ute_sandbox_mode', 'true');\n            updateSandboxStatus();\n            showStatus('✅ Sandbox mode enabled! You can now test with fake money.', 'success');\n        }\n        \n        function disableSandbox() {\n            localStorage.setItem('ute_sandbox_mode', 'false');\n            updateSandboxStatus();\n            showStatus('❌ Sandbox mode disabled. System will use real payments.', 'warning');\n        }\n        \n        function checkSandboxStatus() {\n            updateSandboxStatus();\n        }\n        \n        function clearTestData() {\n            if (confirm('Are you sure you want to clear all test data? This cannot be undone.')) {\n                // Clear test transactions\n                const userData = JSON.parse(localStorage.getItem('urbanTroveData') || '{}');\n                if (userData.transactions) {\n                    userData.transactions = userData.transactions.filter(t => t.gateway !== 'sandbox');\n                    localStorage.setItem('urbanTroveData', JSON.stringify(userData));\n                }\n                showStatus('🗑️ Test data cleared successfully!', 'success');\n            }\n        }\n        \n        function updateSandboxStatus() {\n            const sandboxEnabled = localStorage.getItem('ute_sandbox_mode') === 'true';\n            const statusEl = document.getElementById('sandbox-status');\n            \n            if (sandboxEnabled) {\n                statusEl.innerHTML = `\n                    <strong style=\"color: #10b981;\">✅ SANDBOX MODE: ENABLED</strong><br>\n                    Status: Ready for testing with fake money<br>\n                    Payment Gateway: Simulated<br>\n                    Data Storage: Local (test data)<br>\n                    Last Updated: ${new Date().toLocaleString()}\n                `;\n            } else {\n                statusEl.innerHTML = `\n                    <strong style=\"color: #ef4444;\">❌ SANDBOX MODE: DISABLED</strong><br>\n                    Status: Production mode (real payments)<br>\n                    Payment Gateway: Manual/Real API<br>\n                    Data Storage: Database<br>\n                    Last Updated: ${new Date().toLocaleString()}\n                `;\n            }\n        }\n        \n        function showStatus(message, type) {\n            const statusEl = document.getElementById('sandbox-status');\n            const color = type === 'success' ? '#10b981' : type === 'warning' ? '#f59e0b' : '#ef4444';\n            statusEl.innerHTML = `<strong style=\"color: ${color};\">${message}</strong>`;\n            setTimeout(updateSandboxStatus, 3000);\n        }\n        \n        // Initialize\n        document.addEventListener('DOMContentLoaded', function() {\n            updateSandboxStatus();\n        });\n    </script>\n</body>\n</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sandbox Control Panel - Urban Trove Earn</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .sandbox-panel {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .sandbox-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .sandbox-header h1 {
+            color: #fbbf24;
+            margin-bottom: 10px;
+        }
+        
+        .control-section {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .control-section h3 {
+            color: #fbbf24;
+            margin-bottom: 15px;
+        }
+        
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        
+        .control-btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: transform 0.2s;
+        }
+        
+        .control-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .btn-success { background: #10b981; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-info { background: #3b82f6; color: white; }
+        
+        .status-display {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+        
+        .test-scenarios {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .scenario-card {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .scenario-card h4 {
+            color: #fbbf24;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sandbox-panel">
+        <div class="sandbox-header">
+            <h1>🧪 SANDBOX CONTROL PANEL</h1>
+            <p>Test your Urban Trove Earn platform with fake money</p>
+        </div>
+        
+        <div class="control-section">
+            <h3>🎛️ Sandbox Mode Controls</h3>
+            <div class="control-buttons">
+                <button class="control-btn btn-success" onclick="enableSandbox()">✅ Enable Sandbox</button>
+                <button class="control-btn btn-danger" onclick="disableSandbox()">❌ Disable Sandbox</button>
+                <button class="control-btn btn-info" onclick="checkSandboxStatus()">📊 Check Status</button>
+                <button class="control-btn btn-warning" onclick="clearTestData()">🗑️ Clear Test Data</button>
+            </div>
+            <div id="sandbox-status" class="status-display">
+                Sandbox Status: Checking...
+            </div>
+        </div>
+        
+        <div class="control-section">
+            <h3>🧪 Test Scenarios</h3>
+            <p style="margin-bottom: 15px;">Quick links to test different payment flows:</p>
+            
+            <div class="test-scenarios">
+                <div class="scenario-card">
+                    <h4>💰 Test Deposit</h4>
+                    <p style="font-size: 0.85rem; margin-bottom: 10px;">Test the deposit flow with sandbox payments</p>
+                    <button class="control-btn btn-success" onclick="window.open('deposit.html', '_blank')">Test Deposit</button>
+                </div>
+                
+                <div class="scenario-card">
+                    <h4>💸 Test Withdrawal</h4>
+                    <p style="font-size: 0.85rem; margin-bottom: 10px;">Test withdrawal after making deposits</p>
+                    <button class="control-btn btn-warning" onclick="window.open('withdraw.html', '_blank')">Test Withdrawal</button>
+                </div>
+                
+                <div class="scenario-card">
+                    <h4>📊 View Dashboard</h4>
+                    <p style="font-size: 0.85rem; margin-bottom: 10px;">Check your test transactions</p>
+                    <button class="control-btn btn-info" onclick="window.open('dashboard.html', '_blank')">View Dashboard</button>
+                </div>
+                
+                <div class="scenario-card">
+                    <h4>👑 Admin Panel</h4>
+                    <p style="font-size: 0.85rem; margin-bottom: 10px;">Monitor test transactions as admin</p>
+                    <button class="control-btn btn-info" onclick="window.open('owners.html', '_blank')">Admin Panel</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="control-section">
+            <h3>📋 Test Instructions</h3>
+            <ol style="line-height: 1.8;">
+                <li><strong>Enable Sandbox:</strong> Click "Enable Sandbox" above</li>
+                <li><strong>Test Deposit:</strong> Go to deposit page and choose any amount</li>
+                <li><strong>Choose Scenario:</strong> Click "Simulate Success", "Simulate Failure", or "Simulate Pending"</li>
+                <li><strong>Check Results:</strong> View dashboard to see test transactions</li>
+                <li><strong>Test Withdrawal:</strong> Try withdrawing your test earnings</li>
+                <li><strong>Admin View:</strong> Check admin panel to see all test data</li>
+            </ol>
+        </div>
+        
+        <div class="control-section">
+            <h3>⚠️ Important Notes</h3>
+            <ul style="line-height: 1.8;">
+                <li><strong>No Real Money:</strong> Sandbox mode uses fake money only</li>
+                <li><strong>Test Data:</strong> All transactions are marked as "sandbox"</li>
+                <li><strong>Reset Anytime:</strong> Use "Clear Test Data" to start fresh</li>
+                <li><strong>Production Ready:</strong> Disable sandbox for real payments</li>
+            </ul>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="control-btn btn-info" onclick="window.location.href='index.html'">🏠 Back to Home</button>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+    <script>
+        function enableSandbox() {
+            localStorage.setItem('ute_sandbox_mode', 'true');
+            updateSandboxStatus();
+            showStatus('✅ Sandbox mode enabled! You can now test with fake money.', 'success');
+        }
+        
+        function disableSandbox() {
+            localStorage.setItem('ute_sandbox_mode', 'false');
+            updateSandboxStatus();
+            showStatus('❌ Sandbox mode disabled. System will use real payments.', 'warning');
+        }
+        
+        function checkSandboxStatus() {
+            updateSandboxStatus();
+        }
+        
+        function clearTestData() {
+            if (confirm('Are you sure you want to clear all test data? This cannot be undone.')) {
+                // Clear test transactions
+                const userData = JSON.parse(localStorage.getItem('urbanTroveData') || '{}');
+                if (userData.transactions) {
+                    userData.transactions = userData.transactions.filter(t => t.gateway !== 'sandbox');
+                    localStorage.setItem('urbanTroveData', JSON.stringify(userData));
+                }
+                showStatus('🗑️ Test data cleared successfully!', 'success');
+            }
+        }
+        
+        function updateSandboxStatus() {
+            const sandboxEnabled = localStorage.getItem('ute_sandbox_mode') === 'true';
+            const statusEl = document.getElementById('sandbox-status');
+            
+            if (sandboxEnabled) {
+                statusEl.innerHTML = `
+                    <strong style="color: #10b981;">✅ SANDBOX MODE: ENABLED</strong><br>
+                    Status: Ready for testing with fake money<br>
+                    Payment Gateway: Simulated<br>
+                    Data Storage: Local (test data)<br>
+                    Last Updated: ${new Date().toLocaleString()}
+                `;
+            } else {
+                statusEl.innerHTML = `
+                    <strong style="color: #ef4444;">❌ SANDBOX MODE: DISABLED</strong><br>
+                    Status: Production mode (real payments)<br>
+                    Payment Gateway: Manual/Real API<br>
+                    Data Storage: Database<br>
+                    Last Updated: ${new Date().toLocaleString()}
+                `;
+            }
+        }
+        
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('sandbox-status');
+            const color = type === 'success' ? '#10b981' : type === 'warning' ? '#f59e0b' : '#ef4444';
+            statusEl.innerHTML = `<strong style="color: ${color};">${message}</strong>`;
+            setTimeout(updateSandboxStatus, 3000);
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSandboxStatus();
+        });
+    </script>
+</body>
+</html>

@@ -29,7 +29,7 @@
             100% { transform: rotate(360deg); }
         }
         .success-icon { font-size: 4rem; color: #28a745; margin-bottom: 20px; }
-        .error-icon { font-size: 4rem; color: #dc3545; margin-bottom: 20px; }
+        .error-icon   { font-size: 4rem; color: #dc3545; margin-bottom: 20px; }
     </style>
 </head>
 <body>
@@ -37,7 +37,7 @@
         <div id="loading-state">
             <div class="loading-spinner"></div>
             <h2>🔄 Verifying Payment...</h2>
-            <p>Please wait while we confirm your payment with Flutterwave.</p>
+            <p>Please wait while we confirm your payment.</p>
         </div>
 
         <div id="success-state" style="display:none;">
@@ -57,93 +57,51 @@
 
     <script src="script.js"></script>
     <script>
-        // Get transaction reference from URL
         const urlParams = new URLSearchParams(window.location.search);
-        const txRef = urlParams.get('tx_ref');
-        const status = urlParams.get('status');
+        const txRef     = urlParams.get('tx_ref');
+        const status    = urlParams.get('status');
 
         async function verifyPayment() {
-            if (!txRef) {
-                showError('Invalid payment reference');
-                return;
-            }
+            if (!txRef) { showError('Invalid payment reference'); return; }
 
             try {
-                // Verify payment with Flutterwave
-                const response = await fetch(`https://api.flutterwave.com/v3/transactions/${txRef}/verify`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': 'Bearer FLWSECK_TEST-SANDBOXDEMOKEY-X' // Replace with your secret key
-                    }
+                // Verify server-side — never trust frontend amount
+                const response = await fetch(`${window.location.origin}/api/record-deposit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        txRef,
+                        amount: 0, // server will verify real amount from gateway
+                        email: '',
+                        status: 'callback'
+                    })
                 });
 
                 const result = await response.json();
 
-                if (result.status === 'success' && result.data.status === 'successful') {
-                    // Payment verified - complete the deposit
-                    await completeDeposit(result.data);
+                if (result.status === 'success') {
+                    showSuccess();
                 } else {
-                    showError('Payment verification failed');
+                    showError(result.message || 'Payment verification failed');
                 }
-
-            } catch (error) {
-                console.error('Verification error:', error);
+            } catch (err) {
                 showError('Unable to verify payment. Please contact support.');
             }
         }
 
-        async function completeDeposit(paymentData) {
-            const amount = paymentData.amount;
-            const txRef = paymentData.tx_ref;
-
-            // Update local storage
-            loadData();
-            
-            // Find and update the pending transaction
-            const pendingTxn = userData.transactions.find(t => t.txRef === txRef);
-            if (pendingTxn) {
-                pendingTxn.status = 'Completed';
-                userData.balance += amount;
-                userData.deposits += 1;
-                userData.depositTotal = (userData.depositTotal || 0) + amount;
-            }
-
-            saveData();
-
-            // Record on backend
-            try {
-                await fetch(`${API_BASE}/api/record-deposit`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        amount: amount,
-                        email: paymentData.customer.email,
-                        phone: paymentData.customer.phone_number,
-                        name: paymentData.customer.name,
-                        txRef: txRef
-                    })
-                });
-            } catch (err) {
-                console.log('Backend recording failed, but payment was successful');
-            }
-
-            showSuccess(amount);
-        }
-
-        function showSuccess(amount) {
+        function showSuccess() {
             document.getElementById('loading-state').style.display = 'none';
             document.getElementById('success-state').style.display = 'block';
-            document.getElementById('success-message').textContent = 
-                `Your investment of UGX ${amount.toLocaleString()} has been recorded. You will earn 23% returns after 16 days.`;
+            document.getElementById('success-message').textContent =
+                'Your investment has been recorded. You will earn returns after your investment period.';
         }
 
         function showError(message) {
             document.getElementById('loading-state').style.display = 'none';
-            document.getElementById('error-state').style.display = 'block';
-            document.getElementById('error-message').textContent = message;
+            document.getElementById('error-state').style.display   = 'block';
+            document.getElementById('error-message').textContent   = message;
         }
 
-        // Start verification when page loads
         document.addEventListener('DOMContentLoaded', verifyPayment);
     </script>
 </body>

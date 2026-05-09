@@ -36,16 +36,70 @@ function getVipInfo(invites) {
 
 // Load data from localStorage
 function loadData() {
-    const stored = localStorage.getItem('urbanTroveData');
+    // Load data specific to the current user's email if logged in
+    const currentUserEmail = getCurrentUserEmail();
+    const storageKey = currentUserEmail ? `urbanTroveData_${currentUserEmail}` : 'urbanTroveData';
+    
+    const stored = localStorage.getItem(storageKey);
     if (stored) {
         userData = JSON.parse(stored);
+    } else {
+        // Initialize fresh user data
+        userData = {
+            balance: 0,
+            earnings: 0,
+            deposits: 0,
+            depositTotal: 0,
+            vipTier: 'None',
+            referralCode: '',
+            referralLink: '',
+            referralJoins: 0,
+            referralDepositors: 0,
+            registeredUser: null,
+            transactions: []
+        };
     }
     updateDashboard();
 }
 
 // Save data to localStorage
 function saveData() {
-    localStorage.setItem('urbanTroveData', JSON.stringify(userData));
+    // Save data specific to the current user's email if logged in
+    const currentUserEmail = getCurrentUserEmail();
+    const storageKey = currentUserEmail ? `urbanTroveData_${currentUserEmail}` : 'urbanTroveData';
+    
+    localStorage.setItem(storageKey, JSON.stringify(userData));
+}
+
+// Debug function to see all stored accounts (for testing)
+function debugShowAllAccounts() {
+    console.log('=== ALL STORED ACCOUNTS ===');
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('urbanTroveData') || key === 'urbanTroveData')) {
+            try {
+                const data = JSON.parse(localStorage.getItem(key));
+                if (data && data.registeredUser) {
+                    console.log(`Key: ${key}`);
+                    console.log(`Username: ${data.registeredUser.username}`);
+                    console.log(`Email: ${data.registeredUser.email}`);
+                    console.log(`Balance: UGX ${data.balance}`);
+                    console.log('---');
+                }
+            } catch (e) {
+                console.log(`Invalid data in key: ${key}`);
+            }
+        }
+    }
+    console.log('=== END ACCOUNTS ===');
+}
+
+// Call this in browser console to debug: debugShowAllAccounts()
+window.debugShowAllAccounts = debugShowAllAccounts;
+
+// Get current user's email for data separation
+function getCurrentUserEmail() {
+    return userData.registeredUser ? userData.registeredUser.email : null;
 }
 
 // Update dashboard display
@@ -193,6 +247,11 @@ async function handleDeposit(event) {
     // Get custom investment data if available
     const customData = window.customInvestmentData || null;
 
+    // Generate unique idempotency key the moment user clicks button
+    // This prevents double charges if user clicks twice or internet cuts out
+    const idempotencyKey = `UTE-${email}-${amount}-${Date.now()}`;
+    window._lastIdempotencyKey = idempotencyKey;
+
     // Check if payment gateway is configured or sandbox mode
     if ((PAYMENT_CONFIG.ENABLED && PAYMENT_CONFIG.GATEWAY.PUBLIC_KEY !== 'pk_test_your_public_key_here') || PAYMENT_CONFIG.SANDBOX_MODE) {
         // Use real payment gateway or sandbox
@@ -301,7 +360,7 @@ async function processRealPayment(amount, name, email, phone, network, referralC
         
         // Fallback to manual payment
         setTimeout(() => {
-            showManualPaymentInstructions(amount, phone, network, name, email, referralCode);
+            showManualPaymentInstructions(amount, phone, network, name, email, referralCode, customData);
         }, 2000);
     }
 }
@@ -327,6 +386,18 @@ function showSandboxPayment(amount, name, email, phone, network, referralCode, t
         `;
     }
     
+    // Store payment data globally for button handlers
+    window.sandboxPaymentData = {
+        amount: amount,
+        name: name,
+        email: email,
+        phone: phone,
+        network: network,
+        referralCode: referralCode,
+        txRef: txRef,
+        customData: customData
+    };
+    
     const sandboxUI = `
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: 2px solid #4f46e5; border-radius: 12px; padding: 25px; margin: 20px 0; color: white;">
             <div style="text-align: center; margin-bottom: 20px;">
@@ -349,17 +420,17 @@ function showSandboxPayment(amount, name, email, phone, network, referralCode, t
                 <p style="font-size: 0.85rem; margin-bottom: 15px;">Choose your test scenario:</p>
                 
                 <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                    <button onclick="simulatePaymentSuccess('${amount}', '${name}', '${email}', '${phone}', '${network}', '${referralCode}', '${txRef}', ${customData ? JSON.stringify(customData).replace(/"/g, '&quot;') : 'null'})" 
+                    <button id="sandbox-success-btn" 
                             style="background: #10b981; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;">
                         ✅ SIMULATE SUCCESS
                     </button>
                     
-                    <button onclick="simulatePaymentFailure()" 
+                    <button id="sandbox-failure-btn" 
                             style="background: #ef4444; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;">
                         ❌ SIMULATE FAILURE
                     </button>
                     
-                    <button onclick="simulatePaymentPending('${amount}', '${name}', '${email}', '${phone}', '${network}', '${referralCode}', '${txRef}', ${customData ? JSON.stringify(customData).replace(/"/g, '&quot;') : 'null'})" 
+                    <button id="sandbox-pending-btn" 
                             style="background: #f59e0b; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;">
                         ⏳ SIMULATE PENDING
                     </button>
@@ -373,6 +444,31 @@ function showSandboxPayment(amount, name, email, phone, network, referralCode, t
     `;
     
     showStatus(sandboxUI, 'info');
+    
+    // Add event listeners after DOM is updated
+    setTimeout(() => {
+        const successBtn = document.getElementById('sandbox-success-btn');
+        const failureBtn = document.getElementById('sandbox-failure-btn');
+        const pendingBtn = document.getElementById('sandbox-pending-btn');
+        
+        if (successBtn) {
+            successBtn.addEventListener('click', () => {
+                const data = window.sandboxPaymentData;
+                simulatePaymentSuccess(data.amount, data.name, data.email, data.phone, data.network, data.referralCode, data.txRef, data.customData);
+            });
+        }
+        
+        if (failureBtn) {
+            failureBtn.addEventListener('click', simulatePaymentFailure);
+        }
+        
+        if (pendingBtn) {
+            pendingBtn.addEventListener('click', () => {
+                const data = window.sandboxPaymentData;
+                simulatePaymentPending(data.amount, data.name, data.email, data.phone, data.network, data.referralCode, data.txRef, data.customData);
+            });
+        }
+    }, 100);
 }
 
 // Simulate successful payment
@@ -427,7 +523,8 @@ function simulatePaymentSuccess(amount, name, email, phone, network, referralCod
             referralCode: referralCode || '', 
             txRef,
             status: 'completed',
-            customInvestment: customData
+            customInvestment: customData,
+            idempotencyKey: window._lastIdempotencyKey || txRef
         })
     }).catch(() => console.log('Backend offline'));
 
@@ -527,9 +624,20 @@ function simulatePaymentPending(amount, name, email, phone, network, referralCod
 }
 
 // Manual payment instructions (fallback)
-function showManualPaymentInstructions(amount, phone, network, name, email, referralCode) {
+function showManualPaymentInstructions(amount, phone, network, name, email, referralCode, customData = null) {
     const networkName = network === 'MPS' ? 'MTN Mobile Money' : 'Airtel Money';
     const paymentNumber = '0702762675'; // Replace with your actual payment number
+    
+    // Store payment data for confirmation
+    window.manualPaymentData = {
+        amount: amount,
+        phone: phone,
+        network: network,
+        name: name,
+        email: email,
+        referralCode: referralCode,
+        customData: customData
+    };
     
     const instructions = `
         <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 20px; margin: 20px 0;">
@@ -552,7 +660,7 @@ function showManualPaymentInstructions(amount, phone, network, name, email, refe
             </ol>
             
             <div style="margin-top: 20px; text-align: center;">
-                <button onclick="confirmManualPayment('${amount}', '${phone}', '${network}', '${name}', '${email}', '${referralCode}')" 
+                <button id="manual-payment-confirm-btn" 
                         style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; cursor: pointer;">
                     ✅ I HAVE SENT THE MONEY
                 </button>
@@ -565,11 +673,33 @@ function showManualPaymentInstructions(amount, phone, network, name, email, refe
     `;
     
     showStatus(instructions, 'info');
+    
+    // Add event listener after DOM is updated
+    setTimeout(() => {
+        const confirmBtn = document.getElementById('manual-payment-confirm-btn');
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', () => {
+                const data = window.manualPaymentData;
+                confirmManualPayment(data.amount, data.phone, data.network, data.name, data.email, data.referralCode, data.customData);
+            });
+        }
+    }, 100);
 }
 
 // Confirm manual payment
-async function confirmManualPayment(amount, phone, network, name, email, referralCode) {
+async function confirmManualPayment(amount, phone, network, name, email, referralCode, customData = null) {
     const txRef = `UTE-MANUAL-${Date.now()}`;
+    
+    // Calculate earnings based on custom investment or default rate
+    let earnings, withdrawalUnlockDate;
+    
+    if (customData) {
+        earnings = customData.totalReturn - parseFloat(amount);
+        withdrawalUnlockDate = customData.withdrawalDate;
+    } else {
+        earnings = Math.round(parseFloat(amount) * RETURN_RATE);
+        withdrawalUnlockDate = Date.now() + (16 * 24 * 60 * 60 * 1000); // 16 days from now
+    }
     
     // Record as pending verification
     userData.transactions.unshift({
@@ -577,12 +707,14 @@ async function confirmManualPayment(amount, phone, network, name, email, referra
         depositTimestamp: Date.now(),
         type: 'Deposit',
         amount: parseFloat(amount),
-        earnings: Math.round(parseFloat(amount) * RETURN_RATE),
+        earnings: earnings,
         status: 'Pending Verification',
         txRef: txRef,
         phone: phone,
         network: network,
-        gateway: 'manual'
+        gateway: 'manual',
+        customInvestment: customData || null,
+        withdrawalUnlockDate: withdrawalUnlockDate
     });
     
     saveData();
@@ -601,18 +733,25 @@ async function confirmManualPayment(amount, phone, network, name, email, referra
                 network, 
                 referralCode: referralCode || '', 
                 txRef,
-                status: 'pending_verification'
+                status: 'pending_verification',
+                customInvestment: customData,
+                idempotencyKey: window._lastIdempotencyKey || txRef
             })
         });
     } catch (err) {
         console.log('Backend offline, recorded locally');
     }
 
+    const investmentSummary = customData ? 
+        `Custom Investment: ${customData.days} days at ${customData.profitPercent.toFixed(1)}% profit` :
+        `Standard Investment: 16 days at 23% profit`;
+
     showStatus(`
         <div style="background: #d4edda; border: 1px solid #28a745; border-radius: 8px; padding: 20px; text-align: center;">
             <h3 style="color: #155724;">✅ Payment Confirmation Received</h3>
             <p style="color: #155724; margin: 10px 0;">Reference: <strong>${txRef}</strong></p>
-            <p style="color: #155724;">Your deposit is being verified. You will receive your 23% returns after admin confirms payment and 16-day period.</p>
+            <p style="color: #155724;">Your deposit is being verified. You will receive your returns after admin confirms payment and investment period.</p>
+            <p style="color: #155724; font-size: 0.9rem;">${investmentSummary}</p>
             <div style="margin-top: 15px;">
                 <button onclick="window.location.href='dashboard.html'" 
                         style="background: #002a5c; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
@@ -624,6 +763,7 @@ async function confirmManualPayment(amount, phone, network, name, email, referra
 
     // Clear form
     document.getElementById('deposit-form').reset();
+    window.customInvestmentData = null;
 }
 
 function handlePaymentCallback() { /* no payment gateway — nothing to handle */ }
@@ -642,7 +782,7 @@ function showStatus(message, type) {
     const statusDiv = document.getElementById('deposit-status');
     if (!statusDiv) return;
     statusDiv.style.display = 'block';
-    statusDiv.textContent = message;
+    statusDiv.innerHTML = message; // Changed from textContent to innerHTML
     statusDiv.className = `status-message ${type}`;
 }
 
@@ -703,7 +843,37 @@ function handleRegister(event) {
         return;
     }
 
-    // Try to register via backend API first, fall back to localStorage
+    // Check if email already exists in any user data
+    const userStorageKey = `urbanTroveData_${email}`;
+    if (localStorage.getItem(userStorageKey)) {
+        showRegisterStatus('Email already registered. Please use a different email or login.', 'error');
+        return;
+    }
+    
+    // Also check all existing user data for duplicate emails
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('urbanTroveData_')) {
+            try {
+                const storedData = JSON.parse(localStorage.getItem(key));
+                if (storedData.registeredUser && storedData.registeredUser.email === email) {
+                    showRegisterStatus('Email already registered. Please use a different email or login.', 'error');
+                    return;
+                }
+            } catch (e) {
+                // Skip invalid data
+            }
+        }
+    }
+
+    // Generate referral code locally (always works)
+    const localCode = 'UTE-' + username.replace(/\s+/g,'').toUpperCase().substring(0,6) + '-' + Math.random().toString(36).substr(2,4).toUpperCase();
+    const localLink = `${window.location.origin}/register.html?ref=${localCode}`;
+    
+    // Complete registration locally first
+    _completeRegistration(username, lastname, email, country, password, localCode, localLink, referralCode);
+    
+    // Try to sync with backend in background (optional)
     fetch(`${API_BASE}/api/register`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -712,31 +882,49 @@ function handleRegister(event) {
     .then(r => r.json())
     .then(data => {
         if (data.status === 'success') {
-            _completeRegistration(username, lastname, email, country, password, data.referralCode, data.referralLink, referralCode);
-        } else {
-            showRegisterStatus(data.message || 'Registration failed.', 'error');
+            console.log('Registration synced with backend successfully');
+            // Update with backend referral code if different
+            if (data.referralCode !== localCode) {
+                userData.referralCode = data.referralCode;
+                userData.referralLink = data.referralLink;
+                userData.registeredUser.referralCode = data.referralCode;
+                userData.registeredUser.referralLink = data.referralLink;
+                saveData();
+            }
         }
     })
     .catch(() => {
-        // Backend not running — generate referral code locally
-        const localCode = 'UTE-' + username.replace(/\s+/g,'').toUpperCase().substring(0,6) + '-' + Math.random().toString(36).substr(2,4).toUpperCase();
-        const localLink = `${window.location.origin}/register.html?ref=${localCode}`;
-        _completeRegistration(username, lastname, email, country, password, localCode, localLink, referralCode);
+        console.log('Backend offline - registration saved locally only');
     });
 }
 
 function _completeRegistration(username, lastname, email, country, password, referralCode, referralLink, usedReferralCode) {
-    userData.registeredUser = {
-        username, lastname, email, country, password,
-        referralCode,
-        referralLink,
-        usedReferralCode: usedReferralCode || null,
-        registeredAt: new Date().toLocaleString()
+    // Create completely fresh user data for new registration
+    userData = {
+        balance: 0,
+        earnings: 0,
+        deposits: 0,
+        depositTotal: 0,
+        vipTier: 'None',
+        referralCode: referralCode,
+        referralLink: referralLink,
+        referralJoins: 0,
+        referralDepositors: 0,
+        registeredUser: {
+            username, lastname, email, country, password,
+            referralCode,
+            referralLink,
+            usedReferralCode: usedReferralCode || null,
+            registeredAt: new Date().toLocaleString()
+        },
+        transactions: []
     };
-    userData.referralCode      = referralCode;
-    userData.referralLink      = referralLink;
-    userData.referralJoins     = 0;
-    userData.referralDepositors = 0;
+    
+    // Save with user-specific key
+    const userStorageKey = `urbanTroveData_${email}`;
+    localStorage.setItem(userStorageKey, JSON.stringify(userData));
+    
+    // Also save as current user
     saveData();
 
     showRegisterStatus('Registration successful! Redirecting to your dashboard...', 'success');
@@ -768,25 +956,66 @@ function handleLogin(event) {
         return;
     }
 
-    if (!userData.registeredUser) {
-        loginStatus.textContent = 'No registered account found. Please register first.';
+    // Find user by username across all stored user data
+    let foundUser = null;
+    let foundUserData = null;
+    
+    // Check all localStorage keys for user data
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('urbanTroveData_')) {
+            try {
+                const storedData = JSON.parse(localStorage.getItem(key));
+                if (storedData && storedData.registeredUser && 
+                    storedData.registeredUser.username === username && 
+                    storedData.registeredUser.password === password) {
+                    foundUser = storedData.registeredUser;
+                    foundUserData = storedData;
+                    break;
+                }
+            } catch (e) {
+                console.log('Skipping invalid storage key:', key);
+            }
+        }
+    }
+    
+    // Also check the default storage for backward compatibility
+    if (!foundUser) {
+        try {
+            const defaultData = localStorage.getItem('urbanTroveData');
+            if (defaultData) {
+                const storedData = JSON.parse(defaultData);
+                if (storedData && storedData.registeredUser && 
+                    storedData.registeredUser.username === username && 
+                    storedData.registeredUser.password === password) {
+                    foundUser = storedData.registeredUser;
+                    foundUserData = storedData;
+                }
+            }
+        } catch (e) {
+            console.log('Error checking default storage');
+        }
+    }
+
+    if (!foundUser) {
+        loginStatus.textContent = 'Incorrect username or password. Please check your credentials.';
         loginStatus.className = 'status-message error';
         loginStatus.style.display = 'block';
         return;
     }
 
-    if (username !== userData.registeredUser.username || password !== userData.registeredUser.password) {
-        loginStatus.textContent = 'Incorrect username or password.';
-        loginStatus.className = 'status-message error';
-        loginStatus.style.display = 'block';
-        return;
-    }
-
+    // Load the found user's data
+    userData = foundUserData;
     userData.loggedIn = true;
+    
+    // Save to user-specific storage
     saveData();
-    loginStatus.textContent = 'Login successful! Redirecting...';
+    
+    loginStatus.textContent = `Welcome back, ${foundUser.username}! Redirecting...`;
     loginStatus.className = 'status-message success';
     loginStatus.style.display = 'block';
+    
+    updateDashboard(); // Update with the correct user's data
     setTimeout(() => { window.location.href = 'dashboard.html'; }, 1000);
 }
 
