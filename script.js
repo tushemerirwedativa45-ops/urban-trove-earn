@@ -173,37 +173,16 @@ function updateDashboard() {
 // ════════════════════════════════════════════════════════════
 
 const PAYMENT_CONFIG = {
-    // Set to true when you have a real payment gateway
     ENABLED: false,
-    
-    // SANDBOX MODE - Check localStorage for dynamic control
-    get SANDBOX_MODE() {
-        return localStorage.getItem('ute_sandbox_mode') === 'true';
-    },
-    
-    // Your payment gateway details (replace with actual values)
     GATEWAY: {
         API_URL: 'https://api.your-payment-gateway.com/v1/payments',
         PUBLIC_KEY: 'pk_test_your_public_key_here',
-        SECRET_KEY: 'sk_test_your_secret_key_here', // Keep this secure!
-        WEBHOOK_SECRET: 'your_webhook_secret_here'
     },
-    
-    // Supported payment methods
-    METHODS: {
-        MOBILE_MONEY: true,
-        CARD: true,
-        BANK_TRANSFER: false
-    },
-    
-    // Currency and limits
+    METHODS: { MOBILE_MONEY: true, CARD: true },
     CURRENCY: 'UGX',
     MIN_AMOUNT: 30000,
-    
-    // Callback URLs
-    SUCCESS_URL: window.location.origin + '/payment-success.html',
-    CANCEL_URL: window.location.origin + '/deposit.html',
-    WEBHOOK_URL: window.location.origin + '/api/payment-webhook'
+    SUCCESS_URL: window.location.origin + '/payment-callback.html',
+    CANCEL_URL: window.location.origin + '/deposit.html'
 };
 
 // Backend API base URL
@@ -247,17 +226,14 @@ async function handleDeposit(event) {
     // Get custom investment data if available
     const customData = window.customInvestmentData || null;
 
-    // Generate unique idempotency key the moment user clicks button
-    // This prevents double charges if user clicks twice or internet cuts out
+    // Generate unique idempotency key
     const idempotencyKey = `UTE-${email}-${amount}-${Date.now()}`;
     window._lastIdempotencyKey = idempotencyKey;
 
-    // Check if payment gateway is configured or sandbox mode
-    if ((PAYMENT_CONFIG.ENABLED && PAYMENT_CONFIG.GATEWAY.PUBLIC_KEY !== 'pk_test_your_public_key_here') || PAYMENT_CONFIG.SANDBOX_MODE) {
-        // Use real payment gateway or sandbox
+    // Check if payment gateway is configured
+    if (PAYMENT_CONFIG.ENABLED && PAYMENT_CONFIG.GATEWAY.PUBLIC_KEY !== 'pk_test_your_public_key_here') {
         await processRealPayment(amount, name, email, phone, network, referralCode, customData);
     } else {
-        // Show manual payment instructions
         showManualPaymentInstructions(amount, phone, network, name, email, referralCode, customData);
     }
 
@@ -271,52 +247,26 @@ async function handleDeposit(event) {
 async function processRealPayment(amount, name, email, phone, network, referralCode, customData = null) {
     const txRef = `UTE-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
     
-    // SANDBOX MODE - Simulate payment for testing
-    if (PAYMENT_CONFIG.SANDBOX_MODE) {
-        showSandboxPayment(amount, name, email, phone, network, referralCode, txRef, customData);
-        return;
-    }
-    
     try {
-        // Prepare payment data for your gateway
         const paymentData = {
-            // Standard fields - customize based on your gateway's API
             reference: txRef,
             amount: amount,
             currency: PAYMENT_CONFIG.CURRENCY,
-            
-            // Customer information
-            customer: {
-                name: name,
-                email: email,
-                phone: phone
-            },
-            
-            // Payment method
+            customer: { name, email, phone },
             payment_method: network === 'MPS' ? 'mtn_mobile_money' : 'airtel_money',
-            
-            // Callback URLs
             callback_url: PAYMENT_CONFIG.SUCCESS_URL + `?tx_ref=${txRef}`,
             return_url: PAYMENT_CONFIG.SUCCESS_URL,
             cancel_url: PAYMENT_CONFIG.CANCEL_URL,
-            
-            // Additional metadata
-            metadata: {
-                referral_code: referralCode || '',
-                plan_type: 'investment',
-                source: 'urban_trove_earn'
-            }
+            metadata: { plan_type: 'investment', source: 'urban_trove_earn' }
         };
 
         showStatus('🔄 Connecting to payment gateway...', '');
 
-        // Call your payment gateway API
         const response = await fetch(PAYMENT_CONFIG.GATEWAY.API_URL, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${PAYMENT_CONFIG.GATEWAY.PUBLIC_KEY}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(paymentData)
         });
@@ -324,7 +274,6 @@ async function processRealPayment(amount, name, email, phone, network, referralC
         const result = await response.json();
 
         if (response.ok && result.status === 'success') {
-            // Record pending transaction
             userData.transactions.unshift({
                 date: new Date().toLocaleDateString(),
                 depositTimestamp: Date.now(),
@@ -335,13 +284,9 @@ async function processRealPayment(amount, name, email, phone, network, referralC
                 txRef: txRef,
                 gateway: 'api'
             });
-            
             saveData();
             updateDashboard();
-
             showStatus('🔄 Redirecting to payment gateway...', '');
-            
-            // Redirect to payment page (customize based on your gateway response)
             if (result.data && result.data.payment_url) {
                 window.location.href = result.data.payment_url;
             } else if (result.payment_url) {
@@ -349,278 +294,16 @@ async function processRealPayment(amount, name, email, phone, network, referralC
             } else {
                 throw new Error('No payment URL received from gateway');
             }
-            
         } else {
             throw new Error(result.message || 'Payment initialization failed');
         }
-
     } catch (error) {
         console.error('Payment gateway error:', error);
-        showStatus(`❌ Payment failed: ${error.message}. Please try again or use manual payment.`, 'error');
-        
-        // Fallback to manual payment
+        showStatus(`❌ Payment failed: ${error.message}. Please use manual payment below.`, 'error');
         setTimeout(() => {
             showManualPaymentInstructions(amount, phone, network, name, email, referralCode, customData);
         }, 2000);
     }
-}
-
-// SANDBOX MODE - Simulate payment gateway for testing
-function showSandboxPayment(amount, name, email, phone, network, referralCode, txRef, customData = null) {
-    const networkName = network === 'MPS' ? 'MTN Mobile Money' : 'Airtel Money';
-    
-    let investmentDetails = '';
-    if (customData) {
-        const withdrawalDate = new Date(customData.withdrawalDate).toLocaleDateString('en-UG', {
-            day: 'numeric', month: 'long', year: 'numeric'
-        });
-        investmentDetails = `
-            <div style="background: rgba(255,255,255,0.15); padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85rem;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                    <div><strong>Investment Period:</strong> ${customData.days} days</div>
-                    <div><strong>Profit Rate:</strong> ${customData.profitPercent.toFixed(1)}%</div>
-                    <div><strong>Total Return:</strong> UGX ${customData.totalReturn.toLocaleString()}</div>
-                    <div><strong>Withdrawal Date:</strong> ${withdrawalDate}</div>
-                </div>
-            </div>
-        `;
-    }
-    
-    // Store payment data globally for button handlers
-    window.sandboxPaymentData = {
-        amount: amount,
-        name: name,
-        email: email,
-        phone: phone,
-        network: network,
-        referralCode: referralCode,
-        txRef: txRef,
-        customData: customData
-    };
-    
-    const sandboxUI = `
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: 2px solid #4f46e5; border-radius: 12px; padding: 25px; margin: 20px 0; color: white;">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <h3 style="color: #fbbf24; margin-bottom: 8px;">🧪 SANDBOX PAYMENT GATEWAY</h3>
-                <p style="font-size: 0.9rem; opacity: 0.9;">Testing Mode - No Real Money Required</p>
-            </div>
-            
-            <div style="background: rgba(255,255,255,0.1); padding: 18px; border-radius: 8px; margin-bottom: 20px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 0.9rem;">
-                    <div><strong>Amount:</strong> UGX ${amount.toLocaleString()}</div>
-                    <div><strong>Network:</strong> ${networkName}</div>
-                    <div><strong>Phone:</strong> ${phone}</div>
-                    <div><strong>Reference:</strong> ${txRef}</div>
-                </div>
-            </div>
-            
-            ${investmentDetails}
-            
-            <div style="text-align: center; margin-bottom: 20px;">
-                <p style="font-size: 0.85rem; margin-bottom: 15px;">Choose your test scenario:</p>
-                
-                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                    <button id="sandbox-success-btn" 
-                            style="background: #10b981; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;">
-                        ✅ SIMULATE SUCCESS
-                    </button>
-                    
-                    <button id="sandbox-failure-btn" 
-                            style="background: #ef4444; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;">
-                        ❌ SIMULATE FAILURE
-                    </button>
-                    
-                    <button id="sandbox-pending-btn" 
-                            style="background: #f59e0b; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;">
-                        ⏳ SIMULATE PENDING
-                    </button>
-                </div>
-            </div>
-            
-            <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 6px; font-size: 0.8rem; text-align: center;">
-                <p>💡 <strong>Sandbox Mode:</strong> This simulates real payment flow without charging money. Perfect for testing!</p>
-            </div>
-        </div>
-    `;
-    
-    showStatus(sandboxUI, 'info');
-    
-    // Add event listeners after DOM is updated
-    setTimeout(() => {
-        const successBtn = document.getElementById('sandbox-success-btn');
-        const failureBtn = document.getElementById('sandbox-failure-btn');
-        const pendingBtn = document.getElementById('sandbox-pending-btn');
-        
-        if (successBtn) {
-            successBtn.addEventListener('click', () => {
-                const data = window.sandboxPaymentData;
-                simulatePaymentSuccess(data.amount, data.name, data.email, data.phone, data.network, data.referralCode, data.txRef, data.customData);
-            });
-        }
-        
-        if (failureBtn) {
-            failureBtn.addEventListener('click', simulatePaymentFailure);
-        }
-        
-        if (pendingBtn) {
-            pendingBtn.addEventListener('click', () => {
-                const data = window.sandboxPaymentData;
-                simulatePaymentPending(data.amount, data.name, data.email, data.phone, data.network, data.referralCode, data.txRef, data.customData);
-            });
-        }
-    }, 100);
-}
-
-// Simulate successful payment
-function simulatePaymentSuccess(amount, name, email, phone, network, referralCode, txRef, customData = null) {
-    // Calculate earnings based on custom investment or default rate
-    let earnings, withdrawalUnlockDate;
-    
-    if (customData && typeof customData === 'string') {
-        customData = JSON.parse(customData);
-    }
-    
-    if (customData) {
-        earnings = customData.totalReturn - parseFloat(amount);
-        withdrawalUnlockDate = customData.withdrawalDate;
-    } else {
-        earnings = Math.round(parseFloat(amount) * RETURN_RATE);
-        withdrawalUnlockDate = Date.now() + (16 * 24 * 60 * 60 * 1000); // 16 days from now
-    }
-    
-    // Record successful transaction
-    userData.transactions.unshift({
-        date: new Date().toLocaleDateString(),
-        depositTimestamp: Date.now(),
-        type: 'Deposit',
-        amount: parseFloat(amount),
-        earnings: earnings,
-        status: 'Completed',
-        txRef: txRef,
-        gateway: 'sandbox',
-        customInvestment: customData || null,
-        withdrawalUnlockDate: withdrawalUnlockDate
-    });
-    
-    // Update balances
-    userData.balance += parseFloat(amount);
-    userData.deposits += 1;
-    userData.depositTotal = (userData.depositTotal || 0) + parseFloat(amount);
-    
-    saveData();
-    updateDashboard();
-
-    // Send to backend
-    fetch(`${API_BASE}/api/record-deposit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            amount: parseFloat(amount), 
-            email, 
-            phone, 
-            name, 
-            network, 
-            referralCode: referralCode || '', 
-            txRef,
-            status: 'completed',
-            customInvestment: customData,
-            idempotencyKey: window._lastIdempotencyKey || txRef
-        })
-    }).catch(() => console.log('Backend offline'));
-
-    const investmentSummary = customData ? 
-        `Custom Investment: ${customData.days} days at ${customData.profitPercent.toFixed(1)}% profit` :
-        `Standard Investment: 16 days at 23% profit`;
-
-    showStatus(`
-        <div style="background: #d1fae5; border: 2px solid #10b981; border-radius: 8px; padding: 20px; text-align: center;">
-            <h3 style="color: #065f46;">🎉 SANDBOX PAYMENT SUCCESS!</h3>
-            <p style="color: #065f46; margin: 10px 0;">Reference: <strong>${txRef}</strong></p>
-            <p style="color: #065f46;">Deposit of UGX ${parseFloat(amount).toLocaleString()} completed successfully!</p>
-            <p style="color: #065f46; font-size: 0.9rem;">${investmentSummary}</p>
-            <p style="color: #065f46; font-size: 0.9rem; margin-top: 10px;">💡 This was a test transaction - no real money was charged.</p>
-            <div style="margin-top: 15px;">
-                <button onclick="window.location.href='dashboard.html'" 
-                        style="background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;">
-                    Go to Dashboard
-                </button>
-            </div>
-        </div>
-    `, 'success');
-
-    // Clear form and custom data
-    document.getElementById('deposit-form').reset();
-    window.customInvestmentData = null;
-}
-
-// Simulate failed payment
-function simulatePaymentFailure() {
-    showStatus(`
-        <div style="background: #fef2f2; border: 2px solid #ef4444; border-radius: 8px; padding: 20px; text-align: center;">
-            <h3 style="color: #991b1b;">❌ SANDBOX PAYMENT FAILED!</h3>
-            <p style="color: #991b1b; margin: 10px 0;">Simulated payment failure - insufficient funds or network error.</p>
-            <p style="color: #991b1b; font-size: 0.9rem;">💡 This is a test scenario. Try again or test success flow.</p>
-            <div style="margin-top: 15px;">
-                <button onclick="location.reload()" 
-                        style="background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;">
-                    Try Again
-                </button>
-            </div>
-        </div>
-    `, 'error');
-}
-
-// Simulate pending payment
-function simulatePaymentPending(amount, name, email, phone, network, referralCode, txRef, customData = null) {
-    if (customData && typeof customData === 'string') {
-        customData = JSON.parse(customData);
-    }
-    
-    let earnings, withdrawalUnlockDate;
-    
-    if (customData) {
-        earnings = customData.totalReturn - parseFloat(amount);
-        withdrawalUnlockDate = customData.withdrawalDate;
-    } else {
-        earnings = Math.round(parseFloat(amount) * RETURN_RATE);
-        withdrawalUnlockDate = Date.now() + (16 * 24 * 60 * 60 * 1000);
-    }
-    
-    // Record pending transaction
-    userData.transactions.unshift({
-        date: new Date().toLocaleDateString(),
-        depositTimestamp: Date.now(),
-        type: 'Deposit',
-        amount: parseFloat(amount),
-        earnings: earnings,
-        status: 'Pending Verification',
-        txRef: txRef,
-        gateway: 'sandbox',
-        customInvestment: customData || null,
-        withdrawalUnlockDate: withdrawalUnlockDate
-    });
-    
-    saveData();
-    updateDashboard();
-
-    showStatus(`
-        <div style="background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 20px; text-align: center;">
-            <h3 style="color: #92400e;">⏳ SANDBOX PAYMENT PENDING!</h3>
-            <p style="color: #92400e; margin: 10px 0;">Reference: <strong>${txRef}</strong></p>
-            <p style="color: #92400e;">Payment is being processed. This simulates a pending state.</p>
-            <p style="color: #92400e; font-size: 0.9rem; margin-top: 10px;">💡 In real mode, admin would verify this manually.</p>
-            <div style="margin-top: 15px;">
-                <button onclick="window.location.href='dashboard.html'" 
-                        style="background: #f59e0b; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;">
-                    Go to Dashboard
-                </button>
-            </div>
-        </div>
-    `, 'success');
-
-    // Clear form and custom data
-    document.getElementById('deposit-form').reset();
-    window.customInvestmentData = null;
 }
 
 // Manual payment instructions (fallback)
@@ -1211,15 +894,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Show sandbox mode indicator
-function showSandboxIndicator() {
-    if (PAYMENT_CONFIG.SANDBOX_MODE) {
-        const indicator = document.createElement('div');
-        indicator.innerHTML = `
-            <div style="position: fixed; top: 10px; right: 10px; z-index: 9999; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 8px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer;" onclick="window.open('sandbox.html', '_blank')">
-                🧪 SANDBOX MODE
-            </div>
-        `;
-        document.body.appendChild(indicator);
-    }
-}
+// Show sandbox mode indicator - disabled for production
+function showSandboxIndicator() { }
